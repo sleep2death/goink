@@ -7,8 +7,8 @@ import (
 )
 
 func TestReadLines(t *testing.T) {
-	lines, err := readLines("./ink/sample.ink")
+	s, err := readInk("./ink/sample.ink")
 	assert.Nil(t, err)
-	t.Log(lines)
+	t.Log(len(s.content()))
 	// assert.Equal(t, 9, len(lines))
 }

@@ -3,24 +3,28 @@ package goink
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"io"
 	"os"
 	"regexp"
 	"strings"
 )
 
-type lineHeader int
+type header int
 
 const (
-	lhString lineHeader = iota
-	lhKnot
-	lhChoicePlus
-	lhChoiceStar
-	lhDevert
+	empty header = iota
+	text
+	knot
+	choice
 )
 
+func (lh header) String() string {
+	return [...]string{"empty", "text", "knot", "choice"}[lh]
+}
+
 // ReadLines from ink file.
-func readLines(path string) (lines []line, err error) {
+func readInk(path string) (story *Story, err error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return
@@ -29,6 +33,7 @@ func readLines(path string) (lines []line, err error) {
 	reader := bufio.NewReader(file)
 	buffer := bytes.NewBuffer(make([]byte, 1024))
 
+	story = &Story{}
 	for {
 		part, prefix, err := reader.ReadLine()
 		if err != nil {
@@ -38,14 +43,13 @@ func readLines(path string) (lines []line, err error) {
 		buffer.Write(part)
 
 		if !prefix {
-			// skip empty line
-			if len(buffer.String()) > 0 {
-				line, err := readLine(strings.TrimSpace(buffer.String()))
-				if err != nil {
-					return lines, err
-				}
-				lines = append(lines, line)
+			err = story.parse(strings.TrimSpace(buffer.String()))
+
+			if err != nil {
+				story.status = psError
+				return story, err
 			}
+
 			buffer.Reset()
 		}
 	}
@@ -54,33 +58,89 @@ func readLines(path string) (lines []line, err error) {
 		err = nil
 	}
 
+	story.status = psEnd
 	return
 }
 
-type line struct {
-	header    lineHeader
-	subString string
+var headerReg = regexp.MustCompile(`^(\+\s)|^(={2,}\s)`)
+
+// ParseStatus of the inkobj
+type parseStatus int
+
+const (
+	psError parseStatus = iota - 1
+	psStart
+	psEnd
+)
+
+// InkObj is the basic element of ink story
+type InkObj interface {
+	parent() InkObj
+	content() []InkObj
+
+	parse(line string) error
+	parseStatus() parseStatus
 }
 
-func readLine(str string) (l line, err error) {
-	r := regexp.MustCompile(`^(\*\s)|^(\+\s)|^(={2,}\s)|^(\-\>\s)`)
-	res := r.FindStringSubmatch(str)
+// Story of the ink file
+type Story struct {
+	c       []InkObj
+	status  parseStatus
+	lineNum int
+}
 
-	if len(res) > 0 {
-		for i := 1; i < len(res); i++ {
-			if len(res[i]) > 0 {
-				switch i {
-				case 1:
-					return line{header: lhChoiceStar}, nil
-				case 2:
-					return line{header: lhChoicePlus}, nil
-				case 3:
-					return line{header: lhKnot}, nil
-				case 4:
-					return line{header: lhDevert}, nil
-				}
-			}
+func (s *Story) parent() InkObj {
+	return nil
+}
+
+func (s *Story) content() []InkObj {
+	return s.c
+}
+
+func (s *Story) parseStatus() parseStatus {
+	return s.status
+}
+
+// parse story from input lines
+func (s *Story) parse(line string) error {
+	s.lineNum++
+	h := empty
+	if len(line) > 0 {
+		str := headerReg.FindStringSubmatch(line)
+		if len(str) == 0 {
+			h = text
+			t := &Line{p: s, lineNum: s.lineNum}
+			s.c = append(s.c, t)
+		} else if len(str[1]) > 0 {
+			h = choice
+		} else if len(str[2]) > 0 {
+			h = knot
 		}
 	}
-	return line{header: lhString, subString: str}, nil
+	fmt.Printf("[%d] %s\n", s.lineNum, h)
+	return nil
+}
+
+// Line parsing struct
+type Line struct {
+	p       InkObj
+	c       []InkObj
+	status  parseStatus
+	lineNum int
+}
+
+func (t *Line) parent() InkObj {
+	return t.p
+}
+
+func (t *Line) content() []InkObj {
+	return t.c
+}
+
+func (t *Line) parse(line string) error {
+	return nil
+}
+
+func (t *Line) parseStatus() parseStatus {
+	return t.status
 }
