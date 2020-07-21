@@ -3,28 +3,14 @@ package goink
 import (
 	"bufio"
 	"bytes"
-	"fmt"
 	"io"
 	"os"
 	"regexp"
 	"strings"
 )
 
-type header int
-
-const (
-	empty header = iota
-	text
-	knot
-	choice
-)
-
-func (lh header) String() string {
-	return [...]string{"empty", "text", "knot", "choice"}[lh]
-}
-
 // ReadLines from ink file.
-func readInk(path string) (story *Story, err error) {
+func readInk(path string) (b *block, err error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return
@@ -33,7 +19,7 @@ func readInk(path string) (story *Story, err error) {
 	reader := bufio.NewReader(file)
 	buffer := bytes.NewBuffer(make([]byte, 1024))
 
-	story = &Story{}
+	b = &block{}
 	for {
 		part, prefix, err := reader.ReadLine()
 		if err != nil {
@@ -43,11 +29,9 @@ func readInk(path string) (story *Story, err error) {
 		buffer.Write(part)
 
 		if !prefix {
-			err = story.parse(strings.TrimSpace(buffer.String()))
-
+			b, err = b.parse(strings.TrimRight(strings.TrimSpace(buffer.String()), "\r\n"))
 			if err != nil {
-				story.status = psError
-				return story, err
+				return b, err
 			}
 
 			buffer.Reset()
@@ -57,90 +41,113 @@ func readInk(path string) (story *Story, err error) {
 	if err == io.EOF {
 		err = nil
 	}
-
-	story.status = psEnd
 	return
 }
 
-var headerReg = regexp.MustCompile(`^(\+\s)|^(={2,}\s)`)
-
-// ParseStatus of the inkobj
-type parseStatus int
+type blockType int
 
 const (
-	psError parseStatus = iota - 1
-	psStart
-	psEnd
+	blkKnot blockType = iota
+	blkChoice
+	blkStitch
+	blkInline
 )
 
-// InkObj is the basic element of ink story
-type InkObj interface {
-	parent() InkObj
-	content() []InkObj
+type block struct {
+	parent   *block
+	children []*block
+	content  string
 
-	parse(line string) error
-	parseStatus() parseStatus
+	bt     blockType
+	nested int
 }
 
-// Story of the ink file
-type Story struct {
-	c       []InkObj
-	status  parseStatus
-	lineNum int
+func (b *block) isRoot() bool {
+	return b.parent == nil
 }
 
-func (s *Story) parent() InkObj {
-	return nil
-}
+var blkReg = regexp.MustCompile(`(^\={2,}\s)|(^\++\s)`)
 
-func (s *Story) content() []InkObj {
-	return s.c
-}
-
-func (s *Story) parseStatus() parseStatus {
-	return s.status
-}
-
-// parse story from input lines
-func (s *Story) parse(line string) error {
-	s.lineNum++
-	h := empty
-	if len(line) > 0 {
-		str := headerReg.FindStringSubmatch(line)
-		if len(str) == 0 {
-			h = text
-			t := &Line{p: s, lineNum: s.lineNum}
-			s.c = append(s.c, t)
-		} else if len(str[1]) > 0 {
-			h = choice
-		} else if len(str[2]) > 0 {
-			h = knot
+func (b *block) root() *block {
+	var root *block = b
+	for {
+		if root != nil && root.parent != nil {
+			root = root.parent
+		} else {
+			break
 		}
 	}
-	fmt.Printf("[%d] %s\n", s.lineNum, h)
-	return nil
+
+	return root
 }
 
-// Line parsing struct
-type Line struct {
-	p       InkObj
-	c       []InkObj
-	status  parseStatus
-	lineNum int
+func (b *block) parse(input string) (*block, error) {
+	// skip empty line
+	if len(input) == 0 {
+		return b, nil
+	}
+	// find block header
+	res := blkReg.FindStringSubmatch(input)
+	var blk *block = &block{}
+
+	if len(res) > 0 { // found block header
+		if len(res[1]) > 0 { // KNOT
+			blk.bt = blkKnot
+			blk.nested = 1 // knot's nest level must be 1
+
+			root := b.root() // finding root block
+			blk.parent = root
+			root.children = append(root.children, blk)
+			// TODO: parse knot header
+		} else if len(res[2]) > 0 { // CHOICE
+			blk.bt = blkChoice
+			blk.nested = len(res[2]) - 1 // defult choice level is 1
+
+			if b.bt == blkKnot { // prev block is knot
+				blk.parent = b
+				b.children = append(b.children, blk)
+			} else if b.bt == blkChoice && blk.nested > b.nested { // prev block is choice
+				blk.parent = b
+				b.children = append(b.children, blk)
+			} else if b.bt == blkChoice && blk.nested == b.nested {
+				blk.parent = b.parent
+				b.parent.children = append(blk.parent.children, blk)
+			} else if b.bt == blkChoice && blk.nested < b.nested {
+				for b.nested >= blk.nested && b.bt != blkKnot {
+					b = b.parent
+				}
+				blk.parent = b
+				b.children = append(b.children, blk)
+			}
+		}
+
+		blk.content = input
+		// fmt.Println(blk.content, blk.nested, "<", blk.parent.content)
+		return blk, nil // always return blk as following container
+		// return nil, nil
+	}
+
+	// found inline block
+	blk.bt = blkInline
+	blk.nested = b.nested
+	blk.content = input
+
+	blk.parent = b
+	b.children = append(b.children, blk)
+	// fmt.Println(blk.content, "<", blk.parent.content)
+	return b, nil
 }
 
-func (t *Line) parent() InkObj {
-	return t.p
-}
+func (b *block) format(indent string) (res string) {
+	if len(b.content) > 0 {
+		res += indent + b.content + "\n"
+	}
 
-func (t *Line) content() []InkObj {
-	return t.c
-}
-
-func (t *Line) parse(line string) error {
-	return nil
-}
-
-func (t *Line) parseStatus() parseStatus {
-	return t.status
+	if b.parent != nil {
+		indent += "  "
+	}
+	for _, blk := range b.children {
+		res += blk.format(indent)
+	}
+	return
 }
