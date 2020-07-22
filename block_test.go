@@ -41,14 +41,11 @@ func TestNestedChoice(t *testing.T) {
 	  This is the end.
 	  -> END
 	`
-	t.Log(ls[:1])
 	lines := strings.Split(ls, "\n")
-
 	res, err := parseLines(lines)
 	assert.Nil(t, err)
-	// rebuild ink lines from res
+	t.Log(res.format(""))
 	compare(t, ls, res)
-	// assert.Equal(t, strings.ReplaceAll(ls, "\t", "    "), "\n"+res.format("    ")+"    ")
 }
 
 func parseLines(lines []string) (blk *block, err error) {
@@ -71,4 +68,9 @@ func parseLines(lines []string) (blk *block, err error) {
 
 func compare(t *testing.T, expected string, actual *block) {
 	assert.Equal(t, strings.ReplaceAll(expected, "\t", "    "), "\n"+actual.format("    ")+"    ")
+}
+
+func TestInlineParse(t *testing.T) {
+	inline := &inline{raw: "=== hello ==="}
+	inline.parse()
 }

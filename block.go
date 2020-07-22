@@ -54,9 +54,9 @@ const (
 )
 
 type block struct {
-	parent   *block
-	children []*block
-	content  string
+	parent  *block
+	content []*block
+	inline  *inline
 
 	bt     blockType
 	nested int
@@ -88,7 +88,8 @@ func (b *block) parse(input string) (*block, error) {
 	}
 	// find block header
 	res := blkReg.FindStringSubmatch(input)
-	var blk *block = &block{}
+	blk := &block{inline: &inline{raw: input}}
+	blk.inline.parse()
 
 	if len(res) > 0 { // found block header
 		if len(res[1]) > 0 { // KNOT
@@ -97,31 +98,24 @@ func (b *block) parse(input string) (*block, error) {
 
 			root := b.root() // finding root block
 			blk.parent = root
-			root.children = append(root.children, blk)
+			root.content = append(root.content, blk)
 			// TODO: parse knot header
 		} else if len(res[2]) > 0 { // CHOICE
 			blk.bt = blkChoice
-			blk.nested = len(res[2]) - 1 // defult choice level is 1
+			blk.nested = len(res[2]) - 1 // root choice level is 1
 
 			if b.bt == blkKnot { // prev block is knot
 				blk.parent = b
-				b.children = append(b.children, blk)
-			} else if b.bt == blkChoice && blk.nested > b.nested { // prev block is choice
-				blk.parent = b
-				b.children = append(b.children, blk)
-			} else if b.bt == blkChoice && blk.nested == b.nested {
-				blk.parent = b.parent
-				b.parent.children = append(blk.parent.children, blk)
-			} else if b.bt == blkChoice && blk.nested < b.nested {
+				b.content = append(b.content, blk)
+			} else if b.bt == blkChoice {
 				for b.nested >= blk.nested && b.bt != blkKnot {
 					b = b.parent
 				}
 				blk.parent = b
-				b.children = append(b.children, blk)
+				b.content = append(b.content, blk)
 			}
 		}
 
-		blk.content = input
 		// fmt.Println(blk.content, blk.nested, "<", blk.parent.content)
 		return blk, nil // always return blk as following container
 		// return nil, nil
@@ -130,24 +124,52 @@ func (b *block) parse(input string) (*block, error) {
 	// found inline block
 	blk.bt = blkInline
 	blk.nested = b.nested
-	blk.content = input
 
 	blk.parent = b
-	b.children = append(b.children, blk)
+	b.content = append(b.content, blk)
 	// fmt.Println(blk.content, "<", blk.parent.content)
 	return b, nil
 }
 
 func (b *block) format(indent string) (res string) {
-	if len(b.content) > 0 {
-		res += indent + b.content + "\n"
+	if b.inline != nil && len(b.inline.raw) > 0 {
+		res += indent + b.inline.raw + "\n"
 	}
 
 	if b.parent != nil {
 		indent += "  "
 	}
-	for _, blk := range b.children {
+	for _, blk := range b.content {
 		res += blk.format(indent)
 	}
 	return
+}
+
+type content interface {
+}
+
+type inline struct {
+	raw      string
+	children []content
+}
+
+func (il *inline) parse() {
+	content := newKnotHeader(il.raw)
+	if content != nil {
+		il.children = append(il.children, content)
+	}
+}
+
+type knotHeader struct {
+	name string
+}
+
+var knotReg = regexp.MustCompile(`^={2,}\s(\w+)`)
+
+func newKnotHeader(str string) content {
+	res := knotReg.FindStringSubmatch(str)
+	if len(res[0]) > 0 {
+		return &knotHeader{name: res[1]}
+	}
+	return nil
 }
