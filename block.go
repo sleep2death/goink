@@ -154,22 +154,4 @@ type inline struct {
 }
 
 func (il *inline) parse() {
-	content := newKnotHeader(il.raw)
-	if content != nil {
-		il.children = append(il.children, content)
-	}
-}
-
-type knotHeader struct {
-	name string
-}
-
-var knotReg = regexp.MustCompile(`^={2,}\s(\w+)`)
-
-func newKnotHeader(str string) content {
-	res := knotReg.FindStringSubmatch(str)
-	if len(res[0]) > 0 {
-		return &knotHeader{name: res[1]}
-	}
-	return nil
 }

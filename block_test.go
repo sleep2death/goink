@@ -69,8 +69,3 @@ func parseLines(lines []string) (blk *block, err error) {
 func compare(t *testing.T, expected string, actual *block) {
 	assert.Equal(t, strings.ReplaceAll(expected, "\t", "    "), "\n"+actual.format("    ")+"    ")
 }
-
-func TestInlineParse(t *testing.T) {
-	inline := &inline{raw: "=== hello ==="}
-	inline.parse()
-}
