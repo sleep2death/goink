@@ -1,111 +1,110 @@
 package goink
 
 import (
-	"bufio"
-	"bytes"
-	"io"
-	"os"
+	"regexp"
 	"strings"
 
 	"github.com/pkg/errors"
 )
 
-// ReadInk file from the given path
-func ReadInk(path string) (b Block, err error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return
-	}
-
-	reader := bufio.NewReader(file)
-	buffer := bytes.NewBuffer(make([]byte, 1024))
-
-	b = &Story{}
-	for {
-		part, prefix, err := reader.ReadLine()
-		if err != nil {
-			break
-		}
-
-		buffer.Write(part)
-
-		if !prefix {
-			b, err = b.parse(strings.TrimRight(strings.TrimSpace(buffer.String()), "\r\n"))
-			if err != nil {
-				return nil, err
-			}
-
-			buffer.Reset()
-		}
-	}
-
-	if err == io.EOF {
-		err = nil
-	}
-	return
-}
-
-// Block of the ink
-type Block interface {
-	Parent() Block
-	Content() []Block
-
-	parse(src string) (Block, error)
-}
-
 // Story of the ink
 type Story struct {
-	content []Block
+	start Node // start line of the story
+	end   Node
+
+	current Node //current line of the story
 }
 
-// Parent of the story should always be nil
-func (s *Story) Parent() Block {
+// Reset the story
+func (s *Story) Reset() {
+	s.current = s.start
+}
+
+// Next content of the story
+func (s *Story) Next() (Node, error) {
+	if next, ok := s.current.(Next); ok {
+		s.current = next.Next()
+		return s.current, nil
+	}
+	return nil, errors.New("cannot go next")
+}
+
+// Select the choice
+func (s *Story) Select(idx int) (Node, error) {
+	if choices, ok := s.current.(*Choices); ok {
+		return choices.Select(idx)
+	}
+	return nil, errors.New("cannot select")
+}
+
+var (
+	choiceReg = regexp.MustCompile(`((^\++)|(^\*+))\s(.+)`)
+)
+
+// Parse input string into contents
+func Parse(s *Story, input string) error {
+	// trim spaces and skip empty lines
+	input = strings.TrimRight(strings.TrimSpace(input), "\r\n")
+	if len(input) == 0 {
+		return nil
+	}
+
+	if s.current == nil {
+		s.current = s.start
+	}
+
+	next, canNext := s.current.(Next)
+
+	// * choices
+	result := choiceReg.FindStringSubmatch(input)
+	if result != nil {
+		nesting := len(result[2]) + len(result[3])
+		c := &PlainText{s: s, raw: result[4]}
+		choices := findChoices(s, nesting)
+		if choices == nil {
+			choices = &Choices{s: s, p: s.current, nesting: nesting}
+			next.SetNext(choices)
+		}
+
+		c.p = choices
+		choices.selections = append(choices.selections, c)
+
+		s.current = c
+		return nil
+	}
+
+	// plain text
+	if canNext {
+		errors.Errorf("current block cannot continue: %s", input)
+	}
+
+	p := &PlainText{s: s, p: s.current, raw: input}
+
+	next.SetNext(p)
+	s.current = p
 	return nil
 }
 
-// Content of the story
-func (s *Story) Content() []Block {
-	return s.content
-}
+func findChoices(s *Story, nesting int) *Choices {
+	inline := s.current
 
-func (s *Story) parse(raw string) (Block, error) {
-	// -- container header --
-	// == KNOT ==
-	if knot := newKnot(raw); knot != nil {
-		if s.findKnot(knot.name) != nil {
-			return nil, errors.Errorf("knot name conflict: [%s]", knot.name)
-		}
-		knot.story = s
-		s.content = append(s.content, knot)
-		return knot, nil
-	}
-	// +* CHOICE *+
-	if choice := newChoice(raw); choice != nil {
-		// diff from original ink, force check nesting level of choices
-		// for better reading and writing
-		if choice.nesting > 1 {
-			return nil, errors.Errorf("nesting of the story choice should always be 1: %s", raw)
+	for inline != nil {
+		if choices, ok := inline.(*Choices); ok {
+			if choices.nesting < nesting {
+				return nil
+			} else if choices.nesting == nesting {
+				s.current = choices
+				return choices
+			}
 		}
 
-		choice.parent = s
-		s.content = append(s.content, choice)
-		return choice, nil
-	}
-
-	//  INLINE
-	inline := newInline(raw)
-	inline.parent = s
-	s.content = append(s.content, inline)
-	return s, nil
-}
-
-func (s *Story) findKnot(name string) *Knot {
-	for _, blk := range s.content {
-		k, ok := blk.(*Knot)
-		if ok && k.name == name {
-			return k
-		}
+		inline = inline.Prev()
 	}
 
 	return nil
+}
+
+// NewStory of the Ink
+func NewStory() *Story {
+	return &Story{}
 }
