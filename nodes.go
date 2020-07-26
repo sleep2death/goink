@@ -1,17 +1,27 @@
 package goink
 
-import "github.com/pkg/errors"
+import (
+	"regexp"
+	"strings"
+
+	"github.com/pkg/errors"
+)
 
 // Node is the basic element of the story
 type Node interface {
 	Story() *Story
-	Prev() Node
 }
 
 // Next is a node which can procceed next
 type Next interface {
 	SetNext(prev Node)
 	Next() Node
+}
+
+// Prev is a node which can procceed prev
+type Prev interface {
+	// don't need setter
+	Prev() Node
 }
 
 // Choices of the story
@@ -44,31 +54,72 @@ func (c *Choices) Select(idx int) (Node, error) {
 	return c.s.current, nil
 }
 
-// PlainText of the story
-type PlainText struct {
+// Inline of the story
+type Inline struct {
 	s *Story // story
 	p Node   // prev
 	n Node   // next
+
+	comment string
+	tags    []string
+	divert  string
+	text    string
 
 	raw string
 }
 
 // Story of the content
-func (p *PlainText) Story() *Story {
-	return p.s
+func (i *Inline) Story() *Story {
+	return i.s
 }
 
 // Next content
-func (p *PlainText) Next() Node {
-	return p.n
+func (i *Inline) Next() Node {
+	return i.n
 }
 
 // SetNext content
-func (p *PlainText) SetNext(prev Node) {
-	p.n = prev
+func (i *Inline) SetNext(next Node) {
+	i.n = next
 }
 
 // Prev content
-func (p *PlainText) Prev() Node {
-	return p.p
+func (i *Inline) Prev() Node {
+	return i.p
+}
+
+var (
+	commentReg = regexp.MustCompile(`(^.*)(\/\/)(.+)$`)
+	tagReg     = regexp.MustCompile(`(^.*)(\#)(.+)$`)
+	divertReg  = regexp.MustCompile(`(^.+)(\-\>)(.+)$`)
+)
+
+// NewInline from input
+func NewInline(input string) *Inline {
+	i := &Inline{raw: input}
+
+	// comment | spaces trimed
+	if res := commentReg.FindStringSubmatch(input); res != nil {
+		input = res[1]
+		i.comment = strings.TrimSpace(res[3])
+	}
+
+	// tags | spaces trimmed
+	res := tagReg.FindStringSubmatch(input)
+	for res != nil {
+		input = res[1]
+		i.tags = append(i.tags, strings.TrimSpace(res[3]))
+		res = tagReg.FindStringSubmatch(input)
+	}
+
+	// divert | spaces trimmed
+	if res := divertReg.FindStringSubmatch(input); res != nil {
+		input = res[1]
+		i.divert = strings.TrimSpace(res[3])
+	}
+
+	// text | spaces not trimmed
+	i.text = input
+
+	return i
 }
