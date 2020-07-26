@@ -1,15 +1,13 @@
 package goink
 
 import (
-	"regexp"
-	"strings"
-
 	"github.com/pkg/errors"
 )
 
 // Node is the basic element of the story
 type Node interface {
 	Story() *Story
+	LN() int // LineNumber
 }
 
 // Next is a node which can procceed next
@@ -26,8 +24,9 @@ type Prev interface {
 
 // Choices of the story
 type Choices struct {
-	s *Story // story
-	p Node   // prev
+	s  *Story // story
+	p  Node   // prev
+	ln int    // line number
 
 	nesting    int
 	selections []Node
@@ -36,6 +35,11 @@ type Choices struct {
 // Story of the content
 func (c *Choices) Story() *Story {
 	return c.s
+}
+
+// LN - line number of the content
+func (c *Choices) LN() int {
+	return c.ln
 }
 
 // Prev content
@@ -54,72 +58,72 @@ func (c *Choices) Select(idx int) (Node, error) {
 	return c.s.current, nil
 }
 
-// Inline of the story
-type Inline struct {
-	s *Story // story
-	p Node   // prev
-	n Node   // next
+// Knot of the story
+type Knot struct {
+	s  *Story
+	n  Node
+	ln int
 
-	comment string
-	tags    []string
-	divert  string
-	text    string
-
-	raw string
+	name     string // name of the knot
+	stitches []*Stitch
 }
 
-// Story of the content
-func (i *Inline) Story() *Story {
-	return i.s
+// Story of the knot
+func (k *Knot) Story() *Story {
+	return k.s
+}
+
+// LN - line number of the content
+func (k *Knot) LN() int {
+	return k.ln
 }
 
 // Next content
-func (i *Inline) Next() Node {
-	return i.n
+func (k *Knot) Next() Node {
+	return k.n
 }
 
 // SetNext content
-func (i *Inline) SetNext(next Node) {
-	i.n = next
+func (k *Knot) SetNext(next Node) {
+	k.n = next
 }
 
-// Prev content
-func (i *Inline) Prev() Node {
-	return i.p
+// FindStitch of the knot
+func (k *Knot) FindStitch(name string) *Stitch {
+	for _, s := range k.stitches {
+		if s.name == name {
+			return s
+		}
+	}
+	return nil
 }
 
-var (
-	commentReg = regexp.MustCompile(`(^.*)(\/\/)(.+)$`)
-	tagReg     = regexp.MustCompile(`(^.*)(\#)(.+)$`)
-	divertReg  = regexp.MustCompile(`(^.+)(\-\>)(.+)$`)
-)
+// Stitch of the knot
+type Stitch struct {
+	s  *Story
+	n  Node
+	k  *Knot
+	ln int
 
-// NewInline from input
-func NewInline(input string) *Inline {
-	i := &Inline{raw: input}
+	name string // name of the knot
+}
 
-	// comment | spaces trimed
-	if res := commentReg.FindStringSubmatch(input); res != nil {
-		input = res[1]
-		i.comment = strings.TrimSpace(res[3])
-	}
+// Story of the stitch
+func (s *Stitch) Story() *Story {
+	return s.s
+}
 
-	// tags | spaces trimmed
-	res := tagReg.FindStringSubmatch(input)
-	for res != nil {
-		input = res[1]
-		i.tags = append(i.tags, strings.TrimSpace(res[3]))
-		res = tagReg.FindStringSubmatch(input)
-	}
+// LN - line number of the content
+func (s *Stitch) LN() int {
+	return s.ln
+}
 
-	// divert | spaces trimmed
-	if res := divertReg.FindStringSubmatch(input); res != nil {
-		input = res[1]
-		i.divert = strings.TrimSpace(res[3])
-	}
+// Next content
+func (s *Stitch) Next() Node {
+	return s.n
+}
 
-	// text | spaces not trimmed
-	i.text = input
-
-	return i
+// SetNext content
+func (s *Stitch) SetNext(next Node) {
+	s.n = next
 }

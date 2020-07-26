@@ -11,6 +11,7 @@ import (
 type Story struct {
 	start Node // start line of the story
 	end   Node
+	ln    int
 
 	knots []*Knot
 
@@ -25,12 +26,13 @@ func (s *Story) Reset() {
 // Next content of the story
 func (s *Story) Next() (Node, error) {
 	if next, ok := s.current.(Next); ok {
-		s.current = next.Next()
-		if s.current != nil {
+		if n := next.Next(); n != nil {
+			s.current = n
 			return s.current, nil
 		}
 	}
-	return nil, errors.New("cannot go next")
+
+	return nil, errors.Errorf("cannot go next: %d", s.current.LN())
 }
 
 // Select the choice
@@ -38,7 +40,7 @@ func (s *Story) Select(idx int) (Node, error) {
 	if choices, ok := s.current.(*Choices); ok {
 		return choices.Select(idx)
 	}
-	return nil, errors.New("cannot select")
+	return nil, errors.Errorf("cannot select: %d", s.current.LN())
 }
 
 // FindKnot of the story by name
@@ -53,11 +55,13 @@ func (s *Story) FindKnot(name string) *Knot {
 
 var (
 	choiceReg = regexp.MustCompile(`((^\++)|(^\*+))\s(.+)`)
-	knotReg   = regexp.MustCompile(`(^\={1,})\s(\w+)`)
+	knotReg   = regexp.MustCompile(`(^\={2,})\s(\w+)`)
+	stitchReg = regexp.MustCompile(`(^\=)\s(\w+)`)
 )
 
 // Parse input string into contents
 func Parse(s *Story, input string) error {
+	s.ln++
 	// trim spaces and skip empty lines
 	input = strings.TrimRight(strings.TrimSpace(input), "\r\n")
 	if len(input) == 0 {
@@ -71,17 +75,39 @@ func Parse(s *Story, input string) error {
 	next, canNext := s.current.(Next)
 
 	if canNext {
-		errors.Errorf("current block cannot continue: %s", input)
+		errors.Errorf("current node cannot continue: %d", s.ln)
 	}
 
 	// == knot
 	result := knotReg.FindStringSubmatch(input)
 	if result != nil {
-		k := &Knot{s: s, name: result[2]}
+		k := &Knot{s: s, name: result[2], ln: s.ln}
 		s.knots = append(s.knots, k)
 		s.current = k
 
 		return nil
+	}
+
+	// stitch
+	result = stitchReg.FindStringSubmatch(input)
+	if result != nil {
+		stitch := &Stitch{s: s, name: result[2], ln: s.ln}
+		inline := s.current
+
+		for {
+			if k, ok := inline.(*Knot); ok {
+				k.stitches = append(k.stitches, stitch)
+				s.current = stitch
+
+				return nil
+			}
+
+			if p, ok := inline.(Prev); ok {
+				inline = p.Prev()
+			} else {
+				return errors.Errorf("cannot find stitch's knot: %d", stitch.ln)
+			}
+		}
 	}
 
 	// * choices
@@ -91,9 +117,10 @@ func Parse(s *Story, input string) error {
 		// c := &Inline{s: s, raw: result[4]}
 		c := NewInline(result[4])
 		c.s = s
+		c.ln = s.ln
 		choices := findChoices(s, nesting)
 		if choices == nil {
-			choices = &Choices{s: s, p: s.current, nesting: nesting}
+			choices = &Choices{s: s, p: s.current, nesting: nesting, ln: s.ln}
 			next.SetNext(choices)
 		}
 
@@ -107,12 +134,32 @@ func Parse(s *Story, input string) error {
 	}
 
 	// plain text
-	p := NewInline(input)
-	p.s = s
-	p.p = s.current
+	il := NewInline(input)
+	il.s = s
+	il.ln = s.ln
+	il.p = s.current
 
-	next.SetNext(p)
-	s.current = p
+	// if inline's divert is not empty, set its knot
+	// for local stitch finding
+	if len(il.divert) > 0 {
+		inline := s.current
+
+		for {
+			if k, ok := inline.(*Knot); ok {
+				il.k = k
+				break
+			}
+
+			if p, ok := inline.(Prev); ok {
+				inline = p.Prev()
+			} else {
+				break
+			}
+		}
+	}
+
+	next.SetNext(il)
+	s.current = il
 	return nil
 }
 
@@ -140,27 +187,4 @@ func findChoices(s *Story, nesting int) *Choices {
 // NewStory of the Ink
 func NewStory() *Story {
 	return &Story{}
-}
-
-// Knot of the story
-type Knot struct {
-	s *Story
-	n Node
-
-	name string // name of the knot
-}
-
-// Story of the knot
-func (k *Knot) Story() *Story {
-	return k.s
-}
-
-// Next content
-func (k *Knot) Next() Node {
-	return k.n
-}
-
-// SetNext content
-func (k *Knot) SetNext(next Node) {
-	k.n = next
 }
