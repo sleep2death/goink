@@ -33,45 +33,42 @@ func TestStoryParse(t *testing.T) {
 	s.start = &Inline{s: s}
 
 	for _, line := range contents {
-		err := Parse(s, line)
-		if err != nil {
-			assert.Error(t, err, "parsing error")
-		}
+		Parse(s, line)
 	}
 
 	// plain text
 	s.Reset()
-	n, _ := s.Next()
-	assert.Equal(t, "Once upon a time,", n.(*Inline).raw)
+	s.Next()
+	assert.Equal(t, "Once upon a time,", s.current.(*Inline).raw)
 
-	_, _ = s.Next()
-	_, _ = s.Next()
+	s.Next()
+	s.Next()
 
 	// choices
 	_, err := s.Next()
 	assert.Equal(t, "cannot go next: 5", err.Error())
 
-	_, _ = s.Select(1)
+	s.Select(1)
 	assert.Equal(t, "[Chase the rabbit]", s.current.(*Inline).text)
 	assert.Equal(t, s, s.current.Story())
 
-	_, _ = s.Next()
-	_, _ = s.Select(2)
+	s.Next()
+	s.Select(2)
 	assert.Equal(t, "[DEF]", s.current.(*Inline).text)
 
-	end, _ := s.Next()
+	end, err := s.Next()
 	assert.Nil(t, end)
 
 	s.Reset()
-	_, _ = s.Next()
-	_, _ = s.Next()
-	_, _ = s.Next()
+	s.Next()
+	s.Next()
+	s.Next()
 	assert.Equal(t, s, s.current.Story())
-	_, _ = s.Select(3)
+	s.Select(3)
 	assert.Equal(t, "[Do nothing] ", s.current.(*Inline).text)
 
 	// divert
-	_, _ = s.Next()
+	s.Next()
 	assert.Equal(t, "This is the knot_1 content.", s.current.(*Inline).text)
 
 	// knot
@@ -79,12 +76,12 @@ func TestStoryParse(t *testing.T) {
 	assert.Equal(t, "Knot_1", s.knots[0].name)
 
 	// divert
-	_, _ = s.Next()
+	s.Next()
 	assert.Equal(t, "", s.current.(*Inline).text)
 	assert.Equal(t, s.FindKnot("Knot_1"), s.current.(*Inline).k)
 
 	// stitch
-	_, _ = s.Next()
+	s.Next()
 	assert.Equal(t, "Stitch content here.", s.current.(*Inline).text)
 	assert.Equal(t, s, s.current.Story())
 
