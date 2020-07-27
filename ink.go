@@ -10,8 +10,8 @@ import (
 // Story of the ink
 type Story struct {
 	start Node // start line of the story
-	end   Node
-	ln    int
+	// end   Node
+	ln int
 
 	knots []*Knot
 
@@ -75,7 +75,7 @@ func Parse(s *Story, input string) error {
 	next, canNext := s.current.(Next)
 
 	if canNext {
-		errors.Errorf("current node cannot continue: %d", s.ln)
+		return errors.Errorf("current node cannot continue: %d", s.ln)
 	}
 
 	// == knot
