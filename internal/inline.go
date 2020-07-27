@@ -22,7 +22,7 @@ type Next interface {
 // Story of the ink
 type Story struct {
 	start Inline // start line of the story
-	end   Inline
+	// end   Inline
 
 	current Inline //current line of the story
 }
@@ -87,7 +87,7 @@ func Parse(s *Story, input string) error {
 
 	// plain text
 	if canNext {
-		errors.Errorf("current block cannot continue: %s", input)
+		return errors.Errorf("current block cannot continue: %s", input)
 	}
 
 	p := &PlainText{s: s, p: s.current, raw: input}
