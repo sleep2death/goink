@@ -26,33 +26,35 @@ func TestStoryParse(t *testing.T) {
 	s.start = &PlainText{s: s}
 
 	for _, line := range contents {
-		Parse(s, line)
+		err := Parse(s, line)
+		assert.Error(t, err)
 	}
 
 	s.Reset()
-	s.Next()
-	assert.Equal(t, "Once upon a time,", s.current.(*PlainText).raw)
+	n, _ := s.Next()
+	assert.Equal(t, "Once upon a time,", n.(*PlainText).raw)
 
-	s.Next()
-	s.Next()
+	_, _ = s.Next()
+	_, _ = s.Next()
 
 	_, err := s.Next()
 	assert.Equal(t, "cannot go next", err.Error())
 
-	s.Select(1)
+	_, _ = s.Select(1)
 	assert.Equal(t, "[Chase the rabbit]", s.current.(*PlainText).raw)
 
-	s.Next()
-	s.Select(2)
+	_, _ = s.Next()
+	_, _ = s.Select(2)
 	assert.Equal(t, "[DEF]", s.current.(*PlainText).raw)
 
 	end, err := s.Next()
+	assert.Nil(t, err)
 	assert.Nil(t, end)
 
 	s.Reset()
-	s.Next()
-	s.Next()
-	s.Next()
-	s.Select(3)
+	_, _ = s.Next()
+	_, _ = s.Next()
+	_, _ = s.Next()
+	_, _ = s.Select(3)
 	assert.Equal(t, "[Do nothing]", s.current.(*PlainText).raw)
 }
