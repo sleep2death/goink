@@ -96,6 +96,7 @@ func Parse(s *Story, input string) error {
 
 		for {
 			if k, ok := inline.(*Knot); ok {
+				stitch.k = k
 				k.stitches = append(k.stitches, stitch)
 				s.current = stitch
 
