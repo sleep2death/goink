@@ -26,6 +26,7 @@ func TestStoryParse(t *testing.T) {
 	  -> Stitch_1
 	  = Stitch_1
 	    Stitch content here.
+	    go to the non-exist stitch. -> Stitch_2
 	`
 	contents := strings.Split(input, "\n")
 
@@ -33,42 +34,45 @@ func TestStoryParse(t *testing.T) {
 	s.start = &Inline{s: s}
 
 	for _, line := range contents {
-		Parse(s, line)
+		if err := Parse(s, line); err != nil {
+			t.Error(err)
+		}
 	}
 
 	// plain text
 	s.Reset()
-	s.Next()
-	assert.Equal(t, "Once upon a time,", s.current.(*Inline).raw)
+	n, _ := s.Next()
+	assert.Equal(t, "Once upon a time,", n.(*Inline).raw)
 
-	s.Next()
-	s.Next()
+	_, _ = s.Next()
+	_, _ = s.Next()
 
 	// choices
 	_, err := s.Next()
 	assert.Equal(t, "cannot go next: 5", err.Error())
 
-	s.Select(1)
-	assert.Equal(t, "[Chase the rabbit]", s.current.(*Inline).text)
-	assert.Equal(t, s, s.current.Story())
+	n, _ = s.Select(1)
+	assert.Equal(t, "[Chase the rabbit]", n.(*Inline).text)
+	assert.Equal(t, s, n.Story())
 
-	s.Next()
-	s.Select(2)
-	assert.Equal(t, "[DEF]", s.current.(*Inline).text)
+	_, _ = s.Next()
+	n, _ = s.Select(2)
+	assert.Equal(t, "[DEF]", n.(*Inline).text)
 
 	end, err := s.Next()
+	assert.Equal(t, "cannot go next: 7", err.Error())
 	assert.Nil(t, end)
 
 	s.Reset()
-	s.Next()
-	s.Next()
-	s.Next()
+	_, _ = s.Next()
+	_, _ = s.Next()
+	_, _ = s.Next()
 	assert.Equal(t, s, s.current.Story())
-	s.Select(3)
-	assert.Equal(t, "[Do nothing] ", s.current.(*Inline).text)
+	n, _ = s.Select(3)
+	assert.Equal(t, "[Do nothing] ", n.(*Inline).text)
 
 	// divert
-	s.Next()
+	_, _ = s.Next()
 	assert.Equal(t, "This is the knot_1 content.", s.current.(*Inline).text)
 
 	// knot
@@ -76,17 +80,19 @@ func TestStoryParse(t *testing.T) {
 	assert.Equal(t, "Knot_1", s.knots[0].name)
 
 	// divert
-	s.Next()
+	_, _ = s.Next()
 	assert.Equal(t, "", s.current.(*Inline).text)
 	assert.Equal(t, s.FindKnot("Knot_1"), s.current.(*Inline).k)
 
 	// stitch
-	s.Next()
+	_, _ = s.Next()
 	assert.Equal(t, "Stitch content here.", s.current.(*Inline).text)
 	assert.Equal(t, s, s.current.Story())
 
+	n, _ = s.Next()
+	assert.Equal(t, "Stitch_2", n.(*Inline).divert)
 	_, err = s.Next()
-	assert.Equal(t, "cannot go next: 18", err.Error())
+	assert.Equal(t, "cannot go next: 19", err.Error())
 }
 
 func TestInlineParse(t *testing.T) {

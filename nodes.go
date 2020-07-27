@@ -100,9 +100,9 @@ func (k *Knot) FindStitch(name string) *Stitch {
 
 // Stitch of the knot
 type Stitch struct {
-	s  *Story
-	n  Node
-	k  *Knot
+	s *Story
+	n Node
+	// k  *Knot
 	ln int
 
 	name string // name of the knot
