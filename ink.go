@@ -54,9 +54,10 @@ func (s *Story) FindKnot(name string) *Knot {
 }
 
 var (
-	choiceReg = regexp.MustCompile(`((^\++)|(^\*+))\s(.+)`)
-	knotReg   = regexp.MustCompile(`(^\={2,})\s(\w+)`)
-	stitchReg = regexp.MustCompile(`(^\=)\s(\w+)`)
+	choiceReg = regexp.MustCompile(`(^(\+\s*)+|^(\*\s*)+)(.+)`)
+	knotReg   = regexp.MustCompile(`(^\={2,})(\s+)(\w+)`)
+	stitchReg = regexp.MustCompile(`(^\=)(\s+)(\w+)`)
+	gatherReg = regexp.MustCompile(`^((-\s*)+)([^>].+)`)
 )
 
 // Parse input string into contents
@@ -81,7 +82,7 @@ func Parse(s *Story, input string) error {
 	// == knot
 	result := knotReg.FindStringSubmatch(input)
 	if result != nil {
-		k := &Knot{s: s, name: result[2], ln: s.ln}
+		k := &Knot{s: s, name: result[3], ln: s.ln}
 		s.knots = append(s.knots, k)
 		s.current = k
 
@@ -91,7 +92,7 @@ func Parse(s *Story, input string) error {
 	// stitch
 	result = stitchReg.FindStringSubmatch(input)
 	if result != nil {
-		stitch := &Stitch{s: s, name: result[2], ln: s.ln}
+		stitch := &Stitch{s: s, name: result[3], ln: s.ln}
 		inline := s.current
 
 		for {
@@ -114,12 +115,14 @@ func Parse(s *Story, input string) error {
 	// * choices
 	result = choiceReg.FindStringSubmatch(input)
 	if result != nil {
-		nesting := len(result[2]) + len(result[3])
+		nesting := len(strings.Join(strings.Fields(result[1]), ""))
+		// nesting += len(strings.Join(strings.Fields(result[3]), ""))
 		// c := &Inline{s: s, raw: result[4]}
 		c := NewInline(result[4])
 		c.s = s
 		c.ln = s.ln
 		choices := findChoices(s, nesting)
+
 		if choices == nil {
 			choices = &Choices{s: s, p: s.current, nesting: nesting, ln: s.ln}
 			next.SetNext(choices)
@@ -131,6 +134,26 @@ func Parse(s *Story, input string) error {
 		choices.selections = append(choices.selections, c)
 
 		s.current = c
+		return nil
+	}
+
+	// - gather
+	result = gatherReg.FindStringSubmatch(input)
+	if result != nil {
+		nesting := len(strings.Join(strings.Fields(result[1]), ""))
+		// nesting := len(result[1])
+		g := &Gather{Inline: NewInline(result[3]), nesting: nesting}
+		g.s = s
+		g.ln = s.ln
+
+		choices := findChoices(s, nesting)
+		if choices != nil {
+			choices.gather = g
+		} else {
+			next.SetNext(g)
+		}
+
+		s.current = g
 		return nil
 	}
 
@@ -166,15 +189,32 @@ func Parse(s *Story, input string) error {
 
 func findChoices(s *Story, nesting int) *Choices {
 	inline := s.current
+	var lastChoice *Choices
 
 	for {
+		// if gather, ok := inline.(*Gather); ok {
+
+		// }
+
 		if choices, ok := inline.(*Choices); ok {
-			if choices.nesting < nesting {
-				return nil
-			} else if choices.nesting == nesting {
+			if nesting == choices.nesting {
 				s.current = choices
 				return choices
+			} else {
+				// illigal choices node handling:
+				// * [Chase the rabbit]
+				//   **** [ABC]
+				//   ** [DEF]
+				// * [Shoot the rabbit]
+				//   ** [GHI]
+				//   ** [JKL]
+				//   ** [MNO]
+				if lastChoice != nil && nesting > choices.nesting && nesting < lastChoice.nesting {
+					s.current = lastChoice
+					return lastChoice
+				}
 			}
+			lastChoice = choices
 		}
 
 		if p, ok := inline.(Prev); ok {

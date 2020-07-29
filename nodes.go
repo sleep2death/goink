@@ -30,6 +30,7 @@ type Choices struct {
 
 	nesting    int
 	selections []Node
+	gather     *Gather
 }
 
 // Story of the content
@@ -126,4 +127,10 @@ func (s *Stitch) Next() Node {
 // SetNext content
 func (s *Stitch) SetNext(next Node) {
 	s.n = next
+}
+
+// Gather of the choices
+type Gather struct {
+	*Inline
+	nesting int
 }

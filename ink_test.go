@@ -13,7 +13,7 @@ func TestStoryParse(t *testing.T) {
 	There is a rabbit.
 
 	* [Chase the rabbit]
-	  ** [ABC]
+	  *** [ABC] // weird nesting struggling
 	  ** [DEF]
 	* [Shoot the rabbit]
 	  ** [GHI]
@@ -69,6 +69,7 @@ func TestStoryParse(t *testing.T) {
 	_, _ = s.Next()
 	assert.Equal(t, s, s.current.Story())
 	n, _ = s.Select(3)
+	// t.Log(n)
 	assert.Equal(t, "[Do nothing] ", n.(*Inline).text)
 
 	// divert
@@ -112,4 +113,46 @@ func TestInlineParse(t *testing.T) {
 	i = NewInline("#TAG_1 #TAG_2")
 	assert.Equal(t, "", i.text)
 	assert.Equal(t, "TAG_1", i.tags[0])
+}
+
+func TestGatherParse(t *testing.T) {
+	input := `
+	- 	"Well, Poirot? Murder or suicide?"
+		*	"Murder!"
+		 	"And who did it?"
+			* * 	"Detective-Inspector Japp!"
+			* * 	"Captain Hastings!"
+			* * 	"Myself!"
+			- -     "You must be joking!"
+			* * 	"Mon ami, I am deadly serious."
+			* *		"If only..."
+		* 	"Suicide!"
+			"Really, Poirot? Are you quite sure?"
+			* * 	"Quite sure."
+			* *		"It is perfectly obvious."
+		-	Mrs. Christie lowered her manuscript a moment. The rest of the writing group sat, open-mouthed.
+	`
+	contents := strings.Split(input, "\n")
+
+	s := NewStory()
+	s.start = &Inline{s: s}
+
+	for _, line := range contents {
+		if err := Parse(s, line); err != nil {
+			t.Error(err)
+		}
+	}
+
+	// plain text
+	s.Reset()
+	n, _ := s.Next()
+	assert.Equal(t, "\"Well, Poirot? Murder or suicide?\"", n.(*Gather).raw)
+	_, _ = s.Next()
+	n, _ = s.Select(1)
+	assert.Equal(t, "\"Murder!\"", n.(*Inline).raw)
+	n, _ = s.Next()
+	assert.Equal(t, "\"And who did it?\"", n.(*Inline).raw)
+	_, _ = s.Next()
+	n, _ = s.Select(3)
+	assert.Equal(t, "\"Myself!\"", n.(*Inline).raw)
 }
