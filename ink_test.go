@@ -120,17 +120,17 @@ func TestGatherParse(t *testing.T) {
 	- 	"Well, Poirot? Murder or suicide?"
 		*	"Murder!"
 		 	"And who did it?"
-			* * 	"Detective-Inspector Japp!"
+			* *  	"Detective-Inspector Japp!"
 			* * 	"Captain Hastings!"
 			* * 	"Myself!"
 			- -     "You must be joking!"
-			* * 	"Mon ami, I am deadly serious."
+			* * 	"Mom, I am deadly serious."
 			* *		"If only..."
 		* 	"Suicide!"
 			"Really, Poirot? Are you quite sure?"
 			* * 	"Quite sure."
 			* *		"It is perfectly obvious."
-		-	Mrs. Christie lowered her manuscript a moment. The rest of the writing group sat, open-mouthed.
+		-	The End.// Mrs. Christie lowered her manuscript a moment. The rest of the writing group sat, open-mouthed.
 	`
 	contents := strings.Split(input, "\n")
 
@@ -156,4 +156,59 @@ func TestGatherParse(t *testing.T) {
 	assert.Equal(t, "\"Captain Hastings!\"", n.(*Inline).raw)
 	n, _ = s.Next()
 	assert.Equal(t, "\"You must be joking!\"", n.(*Gather).text)
+	_, _ = s.Next()
+	n, _ = s.Select(2)
+	assert.Equal(t, "\"If only...\"", n.(*Inline).text)
+	n, _ = s.Next()
+	assert.Equal(t, "The End.", n.(*Gather).text)
+}
+
+func TestGatherParse2(t *testing.T) {
+	input := `
+	- 	"Well, Poirot? Murder or suicide?"
+		*	"Murder!"
+		 	"And who did it?"
+			* *  	"Detective-Inspector Japp!"
+			* * 	"Captain Hastings!"
+			* * 	"Myself!"
+			-        "You must be joking!"// fucking weird nesting
+				* * 	"Mom, I am deadly serious."
+				* *		"If only..."
+				* 	"Suicide!"// weird nesting
+					"Really, Poirot? Are you quite sure?"
+					* * 	"Quite sure."
+					* *		"It is perfectly obvious."
+		-	The End.// Mrs. Christie lowered her manuscript a moment. The rest of the writing group sat, open-mouthed.
+	`
+	contents := strings.Split(input, "\n")
+
+	s := NewStory()
+	s.start = &Inline{s: s}
+
+	for _, line := range contents {
+		if err := Parse(s, line); err != nil {
+			t.Error(err)
+		}
+	}
+
+	s.Reset()
+	n, _ := s.Next()
+	assert.Equal(t, "\"Well, Poirot? Murder or suicide?\"", n.(*Gather).raw)
+	_, _ = s.Next()
+	n, _ = s.Select(1)
+	assert.Equal(t, "\"Murder!\"", n.(*Inline).raw)
+	n, _ = s.Next()
+	assert.Equal(t, "\"And who did it?\"", n.(*Inline).raw)
+	_, _ = s.Next()
+	n, _ = s.Select(2)
+	assert.Equal(t, "\"Captain Hastings!\"", n.(*Inline).raw)
+	n, _ = s.Next()
+	assert.Equal(t, "\"You must be joking!\"", n.(*Gather).text)
+	_, _ = s.Next()
+	n, _ = s.Select(3)
+	assert.Equal(t, "\"Suicide!\"", n.(*Inline).text)
+	_, _ = s.Next()
+	_, _ = s.Select(1)
+	n, _ = s.Next()
+	assert.Equal(t, "The End.", n.(*Gather).text)
 }

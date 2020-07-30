@@ -149,6 +149,7 @@ func Parse(s *Story, input string) error {
 		choices := findChoices(s, nesting)
 		if choices != nil {
 			choices.gather = g
+			g.p = choices
 		} else {
 			next.SetNext(g)
 		}
@@ -192,11 +193,12 @@ func findChoices(s *Story, nesting int) *Choices {
 	var lastChoice *Choices
 
 	for {
-		// if gather, ok := inline.(*Gather); ok {
-
-		// }
-
-		if choices, ok := inline.(*Choices); ok {
+		// gather break all nesting
+		if gather, ok := inline.(*Gather); ok {
+			if nesting == gather.nesting {
+				return lastChoice
+			}
+		} else if choices, ok := inline.(*Choices); ok {
 			if nesting == choices.nesting {
 				s.current = choices
 				return choices

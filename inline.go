@@ -42,6 +42,7 @@ func (i *Inline) Next() Node {
 			}
 		}
 		// find knot
+		// TODO: sub stitch in knot
 		if d := i.s.FindKnot(i.divert); d != nil {
 			return d.Next()
 		}
@@ -49,22 +50,27 @@ func (i *Inline) Next() Node {
 		return nil
 	}
 
+	if i.n != nil {
+		return i.n
+	}
+
 	// if divert is nil, try to find gather
 	p := i.Prev()
-
+	var gather *Gather
 	for {
-		if c, ok := p.(*Choices); ok && c.gather != nil {
-			return c.gather
+		if g, ok := p.(*Gather); ok {
+			gather = g
 		}
 
+		if c, ok := p.(*Choices); ok && c.gather != nil && c.gather != gather {
+			return c.gather
+		}
 		if _, ok := p.(Prev); ok {
 			p = p.(Prev).Prev()
 		} else {
-			break
+			return nil
 		}
 	}
-
-	return i.n
 }
 
 // SetNext content
