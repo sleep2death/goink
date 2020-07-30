@@ -143,7 +143,6 @@ func TestGatherParse(t *testing.T) {
 		}
 	}
 
-	// plain text
 	s.Reset()
 	n, _ := s.Next()
 	assert.Equal(t, "\"Well, Poirot? Murder or suicide?\"", n.(*Gather).raw)
@@ -153,6 +152,8 @@ func TestGatherParse(t *testing.T) {
 	n, _ = s.Next()
 	assert.Equal(t, "\"And who did it?\"", n.(*Inline).raw)
 	_, _ = s.Next()
-	n, _ = s.Select(3)
-	assert.Equal(t, "\"Myself!\"", n.(*Inline).raw)
+	n, _ = s.Select(2)
+	assert.Equal(t, "\"Captain Hastings!\"", n.(*Inline).raw)
+	n, _ = s.Next()
+	assert.Equal(t, "\"You must be joking!\"", n.(*Gather).text)
 }

@@ -35,19 +35,35 @@ func (i *Inline) LN() int {
 func (i *Inline) Next() Node {
 	// divert
 	if i.divert != "" {
-		// try to find local stich first
+		// try to find local stitch first
 		if i.k != nil {
 			if d := i.k.FindStitch(i.divert); d != nil {
 				return d.Next()
 			}
 		}
-
+		// find knot
 		if d := i.s.FindKnot(i.divert); d != nil {
 			return d.Next()
 		}
 		// panic(errors.Errorf("cannot find the knot: %s", i.divert))
 		return nil
 	}
+
+	// if divert is nil, try to find gather
+	p := i.Prev()
+
+	for {
+		if c, ok := p.(*Choices); ok && c.gather != nil {
+			return c.gather
+		}
+
+		if _, ok := p.(Prev); ok {
+			p = p.(Prev).Prev()
+		} else {
+			break
+		}
+	}
+
 	return i.n
 }
 
