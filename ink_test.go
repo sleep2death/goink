@@ -165,20 +165,15 @@ func TestGatherParse(t *testing.T) {
 
 func TestGatherParse2(t *testing.T) {
 	input := `
-	- 	"Well, Poirot? Murder or suicide?"
-		*	"Murder!"
-		 	"And who did it?"
-			* *  	"Detective-Inspector Japp!"
-			* * 	"Captain Hastings!"
-			* * 	"Myself!"
-			-        "You must be joking!"// fucking weird nesting
-				* * 	"Mom, I am deadly serious."
-				* *		"If only..."
-				* 	"Suicide!"// weird nesting
-					"Really, Poirot? Are you quite sure?"
-					* * 	"Quite sure."
-					* *		"It is perfectly obvious."
-		-	The End.// Mrs. Christie lowered her manuscript a moment. The rest of the writing group sat, open-mouthed.
+    GatherTest
+        * C0
+        * C1
+        - G0
+        *** C2
+        ** C3
+            **** C4
+            **** C5
+        ------ G1
 	`
 	contents := strings.Split(input, "\n")
 
@@ -192,23 +187,17 @@ func TestGatherParse2(t *testing.T) {
 	}
 
 	s.Reset()
-	n, _ := s.Next()
-	assert.Equal(t, "\"Well, Poirot? Murder or suicide?\"", n.(*Gather).raw)
 	_, _ = s.Next()
-	n, _ = s.Select(1)
-	assert.Equal(t, "\"Murder!\"", n.(*Inline).raw)
-	n, _ = s.Next()
-	assert.Equal(t, "\"And who did it?\"", n.(*Inline).raw)
+	_, _ = s.Next()
+	n, _ := s.Select(1)
+	assert.Equal(t, "C0", n.(*Inline).text)
+	g, _ := s.Next()
+	assert.Equal(t, "G0", g.(*Gather).text)
 	_, _ = s.Next()
 	n, _ = s.Select(2)
-	assert.Equal(t, "\"Captain Hastings!\"", n.(*Inline).raw)
-	n, _ = s.Next()
-	assert.Equal(t, "\"You must be joking!\"", n.(*Gather).text)
-	_, _ = s.Next()
-	n, _ = s.Select(3)
-	assert.Equal(t, "\"Suicide!\"", n.(*Inline).text)
+	assert.Equal(t, "C3", n.(*Inline).text)
 	_, _ = s.Next()
 	_, _ = s.Select(1)
-	n, _ = s.Next()
-	assert.Equal(t, "The End.", n.(*Gather).text)
+	g, _ = s.Next()
+	assert.Nil(t, g)
 }
