@@ -54,10 +54,11 @@ func (s *Story) FindKnot(name string) *Knot {
 }
 
 var (
-	choiceReg = regexp.MustCompile(`(^(\+\s*)+|^(\*\s*)+)(.+)`)
-	knotReg   = regexp.MustCompile(`(^\={2,})(\s+)(\w+)`)
-	stitchReg = regexp.MustCompile(`(^\=)(\s+)(\w+)`)
-	gatherReg = regexp.MustCompile(`^((-\s*)+)([^>].+)`)
+	choiceReg  = regexp.MustCompile(`(^(\+\s*)+|^(\*\s*)+)(.+)`)
+	knotReg    = regexp.MustCompile(`(^\={2,})(\s+)(\w+)`)
+	stitchReg  = regexp.MustCompile(`(^\=)(\s+)(\w+)`)
+	gatherReg  = regexp.MustCompile(`^((-\s*)+)([^>].+)`)
+	knotTagReg = regexp.MustCompile(`^\#\s*(.+)`)
 )
 
 // Parse input string into contents
@@ -159,6 +160,13 @@ func Parse(s *Story, input string) error {
 		return nil
 	}
 
+	// # knottag
+	result = knotTagReg.FindStringSubmatch(input)
+	if k, ok := s.current.(*Knot); ok && result != nil {
+		k.tags = append(k.tags, result[1])
+		return nil
+	}
+
 	// plain text
 	il := NewInline(input)
 	il.s = s
@@ -203,19 +211,18 @@ func findChoices(s *Story, nesting int) *Choices {
 			if nesting == choices.nesting {
 				s.current = choices
 				return choices
-			} else {
-				// illigal choices node handling:
-				// * [Chase the rabbit]
-				//   **** [ABC]
-				//   ** [DEF]
-				// * [Shoot the rabbit]
-				//   ** [GHI]
-				//   ** [JKL]
-				//   ** [MNO]
-				if lastChoice != nil && nesting > choices.nesting && nesting < lastChoice.nesting {
-					s.current = lastChoice
-					return lastChoice
-				}
+			}
+			// illigal choices node handling:
+			// * [Chase the rabbit]
+			//   **** [ABC]
+			//   ** [DEF]
+			// * [Shoot the rabbit]
+			//   ** [GHI]
+			//   ** [JKL]
+			//   ** [MNO]
+			if lastChoice != nil && nesting > choices.nesting && nesting < lastChoice.nesting {
+				s.current = lastChoice
+				return lastChoice
 			}
 			lastChoice = choices
 		}

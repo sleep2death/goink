@@ -67,6 +67,7 @@ type Knot struct {
 
 	name     string // name of the knot
 	stitches []*Stitch
+	tags     []string
 }
 
 // Story of the knot

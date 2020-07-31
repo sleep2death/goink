@@ -207,14 +207,13 @@ func TestGatherParse2(t *testing.T) {
 }
 
 func TestKnotTagsParse(t *testing.T) {
-    input := `
+	input := `
     == Knot_A
     # TagA: 123
     # TagB: "DEF"
     # TagC: 456
     This is the Knot_A's content.
     `
-
 	contents := strings.Split(input, "\n")
 
 	s := NewStory()
@@ -226,5 +225,7 @@ func TestKnotTagsParse(t *testing.T) {
 		}
 	}
 
-    s.Reset()
+	s.Reset()
+	assert.Equal(t, 3, len(s.FindKnot("Knot_A").tags))
+	assert.Equal(t, "TagC: 456", s.FindKnot("Knot_A").tags[2])
 }
