@@ -174,7 +174,10 @@ func TestGatherParse2(t *testing.T) {
             **** C4
             **** C5
         ------ G1
+        - G2
 	`
+
+	// WARNING: DIFFERENT from original inky
 	contents := strings.Split(input, "\n")
 
 	s := NewStory()
@@ -199,5 +202,5 @@ func TestGatherParse2(t *testing.T) {
 	_, _ = s.Next()
 	_, _ = s.Select(1)
 	g, _ = s.Next()
-	assert.Nil(t, g)
+	assert.Equal(t, "G2", g.(*Gather).text)
 }

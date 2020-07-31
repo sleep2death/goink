@@ -151,6 +151,7 @@ func Parse(s *Story, input string) error {
 			choices.gather = g
 			g.p = choices
 		} else {
+			g.p = s.current
 			next.SetNext(g)
 		}
 
