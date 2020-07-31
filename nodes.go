@@ -22,6 +22,12 @@ type Prev interface {
 	Prev() Node
 }
 
+// Select is a node which can procceed select
+type Select interface {
+	// don't need setter
+	Select() Node
+}
+
 // Choices of the story
 type Choices struct {
 	s  *Story // story
@@ -29,7 +35,7 @@ type Choices struct {
 	ln int    // line number
 
 	nesting    int
-	selections []Node
+	selections []*Option
 	gather     *Gather
 }
 
@@ -134,4 +140,9 @@ func (s *Stitch) SetNext(next Node) {
 type Gather struct {
 	*Inline
 	nesting int
+}
+
+// Option of the choices
+type Option struct {
+	*Inline
 }

@@ -120,8 +120,10 @@ func Parse(s *Story, input string) error {
 		// nesting += len(strings.Join(strings.Fields(result[3]), ""))
 		// c := &Inline{s: s, raw: result[4]}
 		c := NewInline(result[4])
-		c.s = s
-		c.ln = s.ln
+		o := &Option{Inline: c}
+		o.s = s
+		o.ln = s.ln
+
 		choices := findChoices(s, nesting)
 
 		if choices == nil {
@@ -131,8 +133,8 @@ func Parse(s *Story, input string) error {
 
 		// add plain text of the choice into choices,
 		// and make it the current node
-		c.p = choices
-		choices.selections = append(choices.selections, c)
+		o.p = choices
+		choices.selections = append(choices.selections, o)
 
 		s.current = c
 		return nil
@@ -212,7 +214,7 @@ func findChoices(s *Story, nesting int) *Choices {
 				s.current = choices
 				return choices
 			}
-			// illigal choices node handling:
+			// weird bu legal choices node handling:
 			// * [Chase the rabbit]
 			//   **** [ABC]
 			//   ** [DEF]
