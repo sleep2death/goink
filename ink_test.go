@@ -177,7 +177,8 @@ func TestGatherParse2(t *testing.T) {
         - G2
 	`
 
-	// WARNING: DIFFERENT from original inky
+	// WARNING: DIFFERENT from original inky's
+	// Gather rule
 	contents := strings.Split(input, "\n")
 
 	s := NewStory()
@@ -203,4 +204,27 @@ func TestGatherParse2(t *testing.T) {
 	_, _ = s.Select(1)
 	g, _ = s.Next()
 	assert.Equal(t, "G2", g.(*Gather).text)
+}
+
+func TestKnotTagsParse(t *testing.T) {
+    input := `
+    == Knot_A
+    # TagA: 123
+    # TagB: "DEF"
+    # TagC: 456
+    This is the Knot_A's content.
+    `
+
+	contents := strings.Split(input, "\n")
+
+	s := NewStory()
+	s.start = &Inline{s: s}
+
+	for _, line := range contents {
+		if err := Parse(s, line); err != nil {
+			t.Error(err)
+		}
+	}
+
+    s.Reset()
 }

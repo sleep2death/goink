@@ -62,8 +62,8 @@ func (c *Choices) Select(idx int) (Node, error) {
 // Knot of the story
 type Knot struct {
 	s  *Story
-	n  Node
 	ln int
+	n  Node
 
 	name     string // name of the knot
 	stitches []*Stitch
