@@ -56,13 +56,8 @@ func (i *Inline) Next() Node {
 
 	// if divert is nil, try to find gather
 	p := i.Prev()
-	var gather *Gather
 	for {
-		if g, ok := p.(*Gather); ok {
-			gather = g
-		}
-
-		if c, ok := p.(*Choices); ok && c.gather != nil && c.gather != gather {
+		if c, ok := p.(*Choices); ok && c.gather != nil && c.gather.LN() > i.ln {
 			return c.gather
 		}
 		if _, ok := p.(Prev); ok {

@@ -124,7 +124,10 @@ func Parse(s *Story, input string) error {
 		o.s = s
 		o.ln = s.ln
 
-		choices := findChoices(s, nesting)
+		choices, err := findChoices(s, nesting)
+		if err != nil {
+			return err
+		}
 
 		if choices == nil {
 			choices = &Choices{s: s, p: s.current, nesting: nesting, ln: s.ln}
@@ -149,13 +152,15 @@ func Parse(s *Story, input string) error {
 		g.s = s
 		g.ln = s.ln
 
-		choices := findChoices(s, nesting)
+		choices, err := findChoices(s, nesting)
+		if err != nil {
+			return err
+		}
 		if choices != nil {
 			choices.gather = g
 			g.p = choices
 		} else {
-			g.p = s.current
-			next.SetNext(g)
+			return errors.Errorf("illegal nesting %d: %s", nesting, input)
 		}
 
 		s.current = g
@@ -199,40 +204,33 @@ func Parse(s *Story, input string) error {
 	return nil
 }
 
-func findChoices(s *Story, nesting int) *Choices {
+func findChoices(s *Story, nesting int) (*Choices, error) {
 	inline := s.current
-	var lastChoice *Choices
 
 	for {
-		// gather break all nesting
 		if gather, ok := inline.(*Gather); ok {
 			if nesting == gather.nesting {
-				return lastChoice
+				return nil, nil
+			} else if nesting > (gather.nesting + 1) {
+				return nil, errors.Errorf("illegal gather nesting：%d", nesting)
 			}
-		} else if choices, ok := inline.(*Choices); ok {
+		}
+
+		if choices, ok := inline.(*Choices); ok {
 			if nesting == choices.nesting {
-				s.current = choices
-				return choices
+				return choices, nil
+			} else if nesting > choices.nesting {
+				if nesting > choices.nesting+1 {
+					return nil, errors.Errorf("illegal choices nesting：%d", nesting)
+				}
+				return nil, nil
 			}
-			// weird bu legal choices node handling:
-			// * [Chase the rabbit]
-			//   **** [ABC]
-			//   ** [DEF]
-			// * [Shoot the rabbit]
-			//   ** [GHI]
-			//   ** [JKL]
-			//   ** [MNO]
-			if lastChoice != nil && nesting > choices.nesting && nesting < lastChoice.nesting {
-				s.current = lastChoice
-				return lastChoice
-			}
-			lastChoice = choices
 		}
 
 		if p, ok := inline.(Prev); ok {
 			inline = p.Prev()
 		} else {
-			return nil
+			return nil, nil
 		}
 	}
 }

@@ -13,7 +13,7 @@ func TestStoryParse(t *testing.T) {
 	There is a rabbit.
 
 	* [Chase the rabbit]
-	  *** [ABC] // weird nesting struggling
+	  ** [ABC] // weird nesting struggling
 	  ** [DEF]
 	* [Shoot the rabbit]
 	  ** [GHI]
@@ -117,7 +117,7 @@ func TestInlineParse(t *testing.T) {
 
 func TestGatherParse(t *testing.T) {
 	input := `
-	- 	"Well, Poirot? Murder or suicide?"
+	"Well, Poirot? Murder or suicide?"
 		*	"Murder!"
 		 	"And who did it?"
 			* *  	"Detective-Inspector Japp!"
@@ -145,7 +145,7 @@ func TestGatherParse(t *testing.T) {
 
 	s.Reset()
 	n, _ := s.Next()
-	assert.Equal(t, "\"Well, Poirot? Murder or suicide?\"", n.(*Gather).raw)
+	assert.Equal(t, "\"Well, Poirot? Murder or suicide?\"", n.(*Inline).raw)
 	_, _ = s.Next()
 	n, _ = s.Select(1)
 	assert.Equal(t, "\"Murder!\"", n.(*Option).raw)
@@ -156,7 +156,7 @@ func TestGatherParse(t *testing.T) {
 	assert.Equal(t, "\"Captain Hastings!\"", n.(*Option).raw)
 	n, _ = s.Next()
 	assert.Equal(t, "\"You must be joking!\"", n.(*Gather).text)
-	_, _ = s.Next()
+	n, _ = s.Next()
 	n, _ = s.Select(2)
 	assert.Equal(t, "\"If only...\"", n.(*Option).text)
 	n, _ = s.Next()
@@ -169,11 +169,12 @@ func TestGatherParse2(t *testing.T) {
         * C0
         * C1
         - G0
-        *** C2
-        ** C3
-            **** C4
-            **** C5
-        ------ G1
+        * C2
+        * C3
+            ** C4
+            ** C5
+            	*** C6
+        	-- G1
         - G2
 	`
 
@@ -186,7 +187,8 @@ func TestGatherParse2(t *testing.T) {
 
 	for _, line := range contents {
 		if err := Parse(s, line); err != nil {
-			t.Error(err)
+			t.Error(err, line)
+			t.FailNow()
 		}
 	}
 
@@ -201,7 +203,11 @@ func TestGatherParse2(t *testing.T) {
 	n, _ = s.Select(2)
 	assert.Equal(t, "C3", n.(*Option).text)
 	_, _ = s.Next()
-	_, _ = s.Select(1)
+	_, _ = s.Select(2)
+	_, _ = s.Next()
+	_, _ = s.Select(1) // C6
+	g, _ = s.Next()
+	assert.Equal(t, "G1", g.(*Gather).text)
 	g, _ = s.Next()
 	assert.Equal(t, "G2", g.(*Gather).text)
 }
