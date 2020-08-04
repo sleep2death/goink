@@ -9,6 +9,7 @@ import (
 
 var choicesReg = regexp.MustCompile(`(^(\+\s*)+|^(\*\s*)+)(.+)`)
 
+// NewOption parse and insert a new option into story
 func NewOption(s *Story, input string) error {
 	res := choicesReg.FindStringSubmatch(input)
 
@@ -56,9 +57,10 @@ func NewOption(s *Story, input string) error {
 		return nil
 	}
 
-	return NotMatch
+	return ErrNotMatch
 }
 
+// Choices of the story
 type Choices struct {
 	story   *Story
 	parent  InkObj
@@ -68,27 +70,33 @@ type Choices struct {
 	nesting int
 }
 
+// Story of the choices
 func (c *Choices) Story() *Story {
 	return c.story
 }
 
+// Parent of the choices
 func (c *Choices) Parent() InkObj {
 	return c.parent
 }
 
+// SetNext of the choices should fire panic
 func (c *Choices) SetNext(obj InkObj) {
 	panic(errors.Errorf("choices can not set next: %v", obj))
 }
 
+// Next content of the choices should be nil
 func (c *Choices) Next() InkObj {
 	// panic(errors.New("choices can not go next"))
 	return nil
 }
 
+// Options of the choices
 func (c *Choices) Options() []*Option {
 	return c.options
 }
 
+// Select the option of the choices by index
 func (c *Choices) Select(idx int) *Option {
 	if idx > (len(c.options)-1) || idx < 0 {
 		return nil
@@ -98,6 +106,7 @@ func (c *Choices) Select(idx int) *Option {
 	return c.options[idx]
 }
 
+// Nesting of the choices
 func (c *Choices) Nesting() int {
 	return c.nesting
 }

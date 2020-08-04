@@ -15,6 +15,7 @@ type Gather struct {
 
 var gatherReg = regexp.MustCompile(`^((-\s*)+)([^>].+)`)
 
+// NewGather create and insert a new gather into story
 func NewGather(s *Story, input string) error {
 	res := gatherReg.FindStringSubmatch(input)
 	if res != nil {
@@ -40,16 +41,16 @@ func NewGather(s *Story, input string) error {
 			g.parent = choices.parent // set gather's grandpa to parent
 			choices.gather = g
 			s.current = g
-
 			return nil
 		}
 
 		return errors.Errorf("wrong nesting of the gather %s", input)
 	}
 
-	return NotMatch
+	return ErrNotMatch
 }
 
+// Next content of the gather
 func (g *Gather) Next() InkObj {
 	if g.next != nil {
 		return g.next
