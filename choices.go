@@ -16,9 +16,13 @@ func NewOption(s *Story, input string) error {
 	if res != nil {
 		nesting := len(strings.Join(strings.Fields(res[1]), ""))
 
-		o := &Option{}
+		i, err := CreateNewline(res[3])
+		if err != nil {
+			return err
+		}
+
+		o := &Option{Inline: i}
 		o.story = s
-		o.raw = res[4]
 
 		obj := s.current
 
@@ -113,5 +117,5 @@ func (c *Choices) Nesting() int {
 
 // Option node of the choices
 type Option struct {
-	Inline
+	*Inline
 }

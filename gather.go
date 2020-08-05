@@ -54,27 +54,3 @@ func NewGather(s *Story, input string) error {
 
 	return ErrNotMatch
 }
-
-// Next content of the gather
-func (g *Gather) Next() InkObj {
-	if g.divert != "" {
-		return g.Inline.Next()
-	}
-
-	if g.next != nil {
-		return g.next
-	}
-
-	obj := g.parent
-	for obj != nil {
-		if c, ok := obj.(*Choices); ok {
-			if c.gather != nil && c.gather != g {
-				return c.gather
-			}
-		}
-
-		obj = obj.Parent()
-	}
-
-	return nil
-}

@@ -44,10 +44,9 @@ func TestDivert(t *testing.T) {
 		- Final Gather A -> Knot_B.Stitch_B_b
 	== Knot_B
 	* Option B
-		** Option B.1
+		** Option B.1 -> Stitch_B_b
 		** Option B.2
-		-- Gather B
-		   Gather B content -> Stitch_B_b
+		-- Gather B  -> Stitch_B_b
 	= Stitch_B_b
 		* Option B
 		* Option C
