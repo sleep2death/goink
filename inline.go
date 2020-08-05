@@ -24,12 +24,27 @@ var (
 
 // NewInline parse and insert a new inline into story
 func NewInline(s *Story, input string) error {
+	i, err := CreateNewline(input)
+
+	if err != nil {
+		return err
+	}
+
+	i.story = s
+	i.parent = s.current
+
+	s.current.SetNext(i)
+	s.current = i
+	return nil
+}
+
+func CreateNewline(input string) (*Inline, error) {
 	// Inline
-	i := &Inline{story: s, parent: s.current, raw: input}
+	i := &Inline{raw: input}
 
 	// illegal gather sign
 	if input[:1] == "-" && input[:2] != "->" {
-		return errors.Errorf("illegal gather character: %s", input)
+		return nil, errors.Errorf("illegal gather character: %s", input)
 	}
 
 	// comment | spaces trimed
@@ -60,9 +75,7 @@ func NewInline(s *Story, input string) error {
 
 	// text | spaces not trimmed
 	i.text = input
-	s.current.SetNext(i)
-	s.current = i
-	return nil
+	return i, nil
 }
 
 // Inline node of tye story
@@ -96,10 +109,40 @@ func (i *Inline) SetNext(obj InkObj) {
 
 // Next content of the inline
 func (i *Inline) Next() InkObj {
+	// divert
+	if i.divert != "" {
+		split := strings.Split(i.divert, ".")
+		// find local stitch
+		if len(split) == 1 {
+			var k *Knot
+			obj := i.Parent()
+
+			for obj != nil {
+				if _, ok := obj.(*Knot); ok {
+					k = obj.(*Knot)
+					break
+				} else if _, ok := obj.(*Stitch); ok {
+					k = obj.(*Stitch).knot
+					break
+				}
+
+				obj = obj.Parent()
+			}
+
+			if k != nil && k.FindStitch(i.divert) != nil {
+				return k.FindStitch(i.divert).Next()
+			}
+		}
+
+		return i.story.FindDivert(i.divert).Next()
+	}
+
+	// leader
 	if i.next != nil {
 		return i.next
 	}
 
+	// fallback to gather
 	obj := i.parent
 	for obj != nil {
 		if c, ok := obj.(*Choices); ok {

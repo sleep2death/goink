@@ -73,14 +73,27 @@ func TestStitchParse(t *testing.T) {
 	== Knot_A
 		This is Knot_A
 		= Stitch_A
+		Stitch_A Content
 	== Knot_B
 		This is Knot_B
 		= Stitch_B
 		** Option A
 		** Option B
+		-- Gather
 	`
 	s, err := parse(input)
 	assert.Nil(t, err)
-	assert.Equal(t, "Knot_A", s.FindDivert(s.current, "Knot_A").(*Knot).Name())
-	assert.Equal(t, "Stitch_B", s.FindDivert(s.current, "Knot_B.Stitch_B").(*Stitch).Name())
+
+	assert.Nil(t, s.FindDivert("Unknown"))
+	assert.Nil(t, s.FindDivert("Unknown.Unknown.Unknown"))
+
+	assert.Equal(t, "Knot_A", s.FindDivert("Knot_A").(*Knot).Name())
+	assert.Equal(t, s, s.FindDivert("Knot_A").(*Knot).Story())
+
+	assert.Equal(t, "Stitch_A", s.FindDivert("Knot_A.Stitch_A").(*Stitch).Name())
+	assert.Equal(t, "Stitch_B", s.FindDivert("Knot_B.Stitch_B").(*Stitch).Name())
+
+	stitch := s.FindDivert("Knot_A.Stitch_A").(*Stitch)
+	assert.Equal(t, s, stitch.Story())
+	assert.Equal(t, "Stitch_A Content", stitch.Next().(*Inline).Render())
 }

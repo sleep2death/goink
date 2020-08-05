@@ -9,7 +9,7 @@ import (
 
 // Gather node of the choices
 type Gather struct {
-	Inline
+	*Inline
 	nesting int
 }
 
@@ -20,8 +20,13 @@ func NewGather(s *Story, input string) error {
 	res := gatherReg.FindStringSubmatch(input)
 	if res != nil {
 		nesting := len(strings.Join(strings.Fields(res[1]), ""))
-		g := &Gather{nesting: nesting}
-		g.raw = res[3]
+		// g := &Gather{nesting: nesting}
+		i, err := CreateNewline(res[3])
+		if err != nil {
+			return err
+		}
+
+		g := &Gather{Inline: i, nesting: nesting}
 		g.story = s
 
 		obj := s.current
@@ -52,12 +57,15 @@ func NewGather(s *Story, input string) error {
 
 // Next content of the gather
 func (g *Gather) Next() InkObj {
+	if g.divert != "" {
+		return g.Inline.Next()
+	}
+
 	if g.next != nil {
 		return g.next
 	}
 
 	obj := g.parent
-
 	for obj != nil {
 		if c, ok := obj.(*Choices); ok {
 			if c.gather != nil && c.gather != g {

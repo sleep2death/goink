@@ -140,19 +140,11 @@ func (s *Stitch) Next() InkObj {
 }
 
 // FindDivert of the given obj
-func (s *Story) FindDivert(obj InkObj, path string) InkObj {
+func (s *Story) FindDivert(path string) InkObj {
 	split := strings.Split(path, ".")
+
 	switch len(split) {
 	case 1:
-		// local stitch first
-		for obj != nil {
-			if s, ok := obj.(*Stitch); ok {
-				if s.name == path {
-					return s.Next()
-				}
-			}
-			obj = obj.Parent()
-		}
 		return s.FindKnot(path)
 	case 2:
 		if k := s.FindKnot(split[0]); k != nil {
