@@ -44,7 +44,7 @@ func NewGather(s *Story, input string) error {
 			return nil
 		}
 
-		return errors.Errorf("wrong nesting of the gather %s", input)
+		return errors.Errorf("cannot find the choice for the g nesting of the ather %s", input)
 	}
 
 	return ErrNotMatch

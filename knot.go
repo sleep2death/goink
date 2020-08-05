@@ -40,7 +40,7 @@ func NewKnot(s *Story, input string) error {
 	return ErrNotMatch
 }
 
-// NewKnot parse and insert a new knot into story
+// NewStitch parse and insert a new knot into story
 func NewStitch(s *Story, input string) error {
 	// = stitch
 	result := stitchReg.FindStringSubmatch(input)
