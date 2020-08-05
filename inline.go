@@ -137,7 +137,7 @@ func (i *Inline) Next() InkObj {
 		return i.story.FindDivert(i.divert).Next()
 	}
 
-	// leader
+	// fallback to next
 	if i.next != nil {
 		return i.next
 	}
