@@ -51,7 +51,7 @@ func TestChoicesNesting(t *testing.T) {
 			t.Log(s.current.(*Gather).Render())
 		case *Choices:
 			for _, o := range s.current.(*Choices).options {
-				t.Log("*", o.raw)
+				t.Log("*", o.Render())
 			}
 
 			// random select

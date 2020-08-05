@@ -16,6 +16,5 @@ func TestNewGather(t *testing.T) {
 	A content here.
 	`
 	_, err := parse(input)
-	t.Log(err.Error())
 	assert.NotNil(t, err)
 }

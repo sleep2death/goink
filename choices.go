@@ -16,7 +16,7 @@ func NewOption(s *Story, input string) error {
 	if res != nil {
 		nesting := len(strings.Join(strings.Fields(res[1]), ""))
 
-		i, err := CreateNewline(res[3])
+		i, err := CreateNewline(res[4])
 		if err != nil {
 			return err
 		}
