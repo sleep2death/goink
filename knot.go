@@ -48,21 +48,33 @@ func NewStitch(s *Story, input string) error {
 		name := result[3]
 
 		obj := s.current
+
+		var k *Knot
 		for obj != nil {
-			if k, ok := obj.(*Knot); ok {
-				if k.FindStitch(name) != nil {
-					return errors.Errorf("conflict stitch name: %s", name)
-				}
-				stitch := &Stitch{story: s, name: name}
-				k.stitches = append(k.stitches, stitch)
-				s.current = stitch
-				return nil
+			if _, ok := obj.(*Knot); ok {
+				k = obj.(*Knot)
+				break
+			} else if _, ok := obj.(*Stitch); ok {
+				k = obj.(*Stitch).knot
+				break
 			}
 
 			obj = obj.Parent()
 		}
 
-		return errors.Errorf("can not find the knot of this stitch: %s", input)
+		if k == nil {
+			return errors.Errorf("can not find the knot of the stitch: %s", input)
+		}
+
+		if k.FindStitch(name) != nil {
+			return errors.Errorf("conflict stitch name: %s", name)
+		}
+
+		stitch := &Stitch{story: s, name: name, knot: k}
+		k.stitches = append(k.stitches, stitch)
+		s.current = stitch
+
+		return nil
 	}
 
 	return ErrNotMatch
@@ -96,6 +108,7 @@ func (k *Knot) Next() InkObj {
 // Stitch is a sub container of a knot
 type Stitch struct {
 	story *Story
+	knot  *Knot
 	name  string
 
 	next InkObj
