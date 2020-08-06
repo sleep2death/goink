@@ -69,6 +69,7 @@ type Choices struct {
 	story   *Story
 	parent  InkObj
 	options []*Option
+	path string
 
 	gather  *Gather
 	nesting int
@@ -77,6 +78,11 @@ type Choices struct {
 // Story of the choices
 func (c *Choices) Story() *Story {
 	return c.story
+}
+
+// Path of the choices
+func (c *Choices) Path() string {
+	return c.path
 }
 
 // Parent of the choices

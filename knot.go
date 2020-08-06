@@ -7,15 +7,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Knot is a container of story's content
-type Knot struct {
-	story *Story
-	name  string
-
-	stitches []*Stitch
-	next     InkObj
-}
-
 var knotReg = regexp.MustCompile(`(^\={2,})(\s+)(\w+)`)
 var stitchReg = regexp.MustCompile(`(^\=)(\s+)(\w+)`)
 
@@ -80,6 +71,21 @@ func NewStitch(s *Story, input string) error {
 	return ErrNotMatch
 }
 
+// Knot is a container of story's content
+type Knot struct {
+	story *Story
+	name  string
+	path string
+
+	stitches []*Stitch
+	next     InkObj
+}
+
+// Path of the knot
+func (k *Knot) Path() string {
+	return k.path
+}
+
 // Name of the knot
 func (k *Knot) Name() string {
 	return k.name
@@ -110,6 +116,7 @@ type Stitch struct {
 	story *Story
 	knot  *Knot
 	name  string
+	path string
 
 	next InkObj
 }
@@ -117,6 +124,11 @@ type Stitch struct {
 // Name of the stitch
 func (s *Stitch) Name() string {
 	return s.name
+}
+
+// path of the stitch
+func (s *Stitch) Path() string {
+	return s.path
 }
 
 // Story of the stitch

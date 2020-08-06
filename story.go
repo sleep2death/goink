@@ -11,6 +11,7 @@ type Story struct {
 	start   InkObj
 	current InkObj
 
+	objMap map[string]InkObj
 	knots []*Knot
 }
 

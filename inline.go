@@ -7,13 +7,15 @@ import (
 	"github.com/pkg/errors"
 )
 
-// InkObj is the basic node of the story
+// InkObj is the basic element of the story
 type InkObj interface {
 	Story() *Story
 	Parent() InkObj
 
 	Next() InkObj
 	SetNext(obj InkObj)
+
+	Path() string
 }
 
 var (
@@ -83,6 +85,7 @@ type Inline struct {
 	story  *Story
 	parent InkObj
 	next   InkObj
+	path string
 
 	raw string
 
@@ -100,6 +103,11 @@ func (i *Inline) Render() string {
 // Parent of the inline
 func (i *Inline) Parent() InkObj {
 	return i.parent
+}
+
+// Path of the inline
+func (i *Inline) Path() string {
+	return i.path
 }
 
 // SetNext content of the inline
