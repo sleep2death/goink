@@ -11,7 +11,10 @@ type Story struct {
 	start   InkObj
 	current InkObj
 
+	ln int
+
 	objMap map[string]InkObj
+
 	knots []*Knot
 }
 
@@ -42,6 +45,7 @@ func (s *Story) Parse(input string) error {
 		return nil
 	}
 
+	s.ln++
 	for _, parser := range parsers {
 		if err := parser(s, input); err != nil {
 			if err != ErrNotMatch {
@@ -68,7 +72,7 @@ func NewStory() *Story {
 	// Inline always be the last parser
 	parsers = append(parsers, NewKnot, NewStitch, NewOption, NewGather, NewInline)
 
-	start := &Inline{raw: "[start]"}
+	start := &Inline{raw: "[start]", path: "r"}
 	story := &Story{start: start}
 	story.current = story.start
 	story.objMap = make(map[string]InkObj)

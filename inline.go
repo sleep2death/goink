@@ -35,8 +35,12 @@ func NewInline(s *Story, input string) error {
 	i.story = s
 	i.parent = s.current
 
+	i.path = s.current.Path() + ".i"
+	s.objMap[i.path] = i
+
 	s.current.SetNext(i)
 	s.current = i
+
 	return nil
 }
 
@@ -85,7 +89,7 @@ type Inline struct {
 	story  *Story
 	parent InkObj
 	next   InkObj
-	path string
+	path   string
 
 	raw string
 

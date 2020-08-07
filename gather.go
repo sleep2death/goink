@@ -43,8 +43,12 @@ func NewGather(s *Story, input string) error {
 
 		if choices != nil && choices.gather == nil {
 			g.parent = choices.parent // set gather's grandpa to parent
+
 			choices.gather = g
 			s.current = g
+
+			g.path = choices.Path() + ".g"
+			s.objMap[g.path] = g
 			return nil
 		}
 

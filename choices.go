@@ -2,6 +2,7 @@ package goink
 
 import (
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -52,9 +53,15 @@ func NewOption(s *Story, input string) error {
 
 		if choices == nil {
 			choices = &Choices{story: s, parent: s.current, nesting: nesting}
+
+			choices.path = s.current.Path() + ".c"
+			s.objMap[choices.path] = choices
+
 			s.current.SetNext(choices)
 		}
+		o.path = choices.path + "." + strconv.Itoa(len(choices.options))
 		choices.options = append(choices.options, o)
+		s.objMap[o.path] = o
 
 		// s.current.SetNext(o)
 		o.parent = choices
@@ -70,7 +77,7 @@ type Choices struct {
 	story   *Story
 	parent  InkObj
 	options []*Option
-	path string
+	path    string
 
 	gather  *Gather
 	nesting int
