@@ -15,7 +15,7 @@ type Story struct {
 
 	objMap   map[string]InkObj
 	objCount map[string]int
-	vars     map[string]interface{}
+	// vars     map[string]interface{}
 }
 
 // Current content of the story

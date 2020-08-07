@@ -137,7 +137,7 @@ func TestStorySave(t *testing.T) {
 	ss, err := parse(input)
 	assert.Nil(t, err)
 	err = ss.Load(state)
-	t.Log(ss.objCount)
+
 	assert.Nil(t, err)
 	assert.Equal(t, "r.k_Knot_A.s_Stitch_A.c.0", s.Current().Path())
 	assert.Equal(t, 1, s.objCount[s.Current().Path()])
@@ -145,6 +145,10 @@ func TestStorySave(t *testing.T) {
 	ss.Next()
 	ss.Next()
 	assert.Equal(t, "r.k_Knot_B.s_Stitch_A.i", ss.Current().Path())
+
+	state.path = "invalid path"
+	err = ss.Load(state)
+	assert.NotNil(t, err)
 }
 
 func parse(input string) (*Story, error) {
