@@ -88,3 +88,38 @@ func TestChoicesSupressing(t *testing.T) {
 		t.Error("current is not choices")
 	}
 }
+
+func TestStickyOption(t *testing.T) {
+	input := `
+	* Hello, World -> Knot_A
+	== Knot_A
+	* Opt_A
+	+ Opt_B
+	+ Opt_C
+	- Loop Gather -> Knot_A
+	`
+	s, err := parse(input)
+	assert.Nil(t, err)
+
+	s.Next()
+	s.Select(0)
+	s.Next()
+
+	assert.Equal(t, 3, len(s.Current().(*Choices).Options()))
+
+	s.Select(0)
+	s.Next()
+	s.Next()
+
+	assert.Equal(t, 2, len(s.Current().(*Choices).Options()))
+
+	// Select the first option again
+	opt := s.Select(0)
+	assert.Equal(t, "Opt_B", opt.Render(false))
+
+	s.Next()
+	s.Next()
+
+	// sticky
+	assert.Equal(t, 2, len(s.Current().(*Choices).Options()))
+}

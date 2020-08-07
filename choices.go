@@ -25,6 +25,13 @@ func NewOption(s *Story, input string) error {
 		o := &Option{Inline: i}
 		o.story = s
 
+		// once-only option
+		if len(res[2]) > 0 {
+			o.sticky = true
+		} else {
+			o.sticky = false
+		}
+
 		obj := s.current
 
 		var choices *Choices
@@ -110,19 +117,30 @@ func (c *Choices) Next() InkObj {
 }
 
 // Options of the choices
-func (c *Choices) Options() []*Option {
-	return c.options
+func (c *Choices) Options() (os []*Option) {
+	for _, opt := range c.options {
+		if opt.sticky {
+			os = append(os, opt)
+		} else if count, ok := c.story.objCount[opt.Path()]; !ok || count == 0 {
+			os = append(os, opt)
+		}
+	}
+	return os
 }
 
 // Select the option of the choices by index
 func (c *Choices) Select(idx int) *Option {
-	if idx > (len(c.options)-1) || idx < 0 {
+	// filtered options
+	opts := c.Options()
+
+	if idx >= len(opts) || idx < 0 {
 		return nil
 	}
 
-	c.story.current = c.options[idx]
-	c.story.objCount[c.story.current.Path()] += 1
-	return c.options[idx]
+	opt := opts[idx]
+	c.story.current = opt
+	c.story.objCount[opt.Path()] += 1
+	return opt
 }
 
 // Nesting of the choices
@@ -133,11 +151,12 @@ func (c *Choices) Nesting() int {
 // Option node of the choices
 type Option struct {
 	*Inline
+	sticky bool
 }
 
 var supressingReg = regexp.MustCompile(`(^.*)\[(.*)\](.*$)`)
 
-// Render option text
+// Render option text with supressing
 func (o *Option) Render(supressing bool) string {
 	res := supressingReg.FindStringSubmatch(o.text)
 	if res != nil {
