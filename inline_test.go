@@ -66,12 +66,12 @@ func TestDivert(t *testing.T) {
 		case *Inline:
 			t.Log(s.current.(*Inline).Render())
 		case *Option:
-			t.Log(s.current.(*Option).Render())
+			t.Log(s.current.(*Option).Render(true))
 		case *Gather:
 			t.Log(s.current.(*Gather).Render())
 		case *Choices:
 			for _, o := range s.current.(*Choices).options {
-				t.Log("*", o.raw)
+				t.Log("*", o.Render(true))
 			}
 
 			// random select

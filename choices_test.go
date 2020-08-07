@@ -54,3 +54,34 @@ func TestChoicesFunctions(t *testing.T) {
 	}
 
 }
+
+func TestChoicesSupressing(t *testing.T) {
+	input := `
+	* ABC[.]DEF
+	* GHI[]JKL
+	* []MNO
+	* PQR[]
+	* [Hello], World
+	`
+	s, err := parse(input)
+	assert.Nil(t, err)
+
+	if c, ok := s.Next().(*Choices); ok {
+		assert.Equal(t, "ABC.", c.options[0].Render(true))
+		assert.Equal(t, "ABCDEF", c.options[0].Render(false))
+
+		assert.Equal(t, "GHI", c.options[1].Render(true))
+		assert.Equal(t, "GHIJKL", c.options[1].Render(false))
+
+		assert.Equal(t, "", c.options[2].Render(true))
+		assert.Equal(t, "MNO", c.options[2].Render(false))
+
+		assert.Equal(t, "PQR", c.options[3].Render(true))
+		assert.Equal(t, "PQR", c.options[3].Render(false))
+
+		assert.Equal(t, "Hello", c.options[4].Render(true))
+		assert.Equal(t, ", World", c.options[4].Render(false))
+	} else {
+		t.Error("current is not choices")
+	}
+}

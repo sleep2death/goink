@@ -134,3 +134,22 @@ func (c *Choices) Nesting() int {
 type Option struct {
 	*Inline
 }
+
+var supressingReg = regexp.MustCompile(`(^.*)\[(.*)\](.*$)`)
+
+// Render option text
+func (o *Option) Render(supressing bool) string {
+	res := supressingReg.FindStringSubmatch(o.text)
+	if res != nil {
+		before := res[1]
+		middle := res[2]
+		after := res[3]
+
+		if supressing {
+			return before + middle
+		} else {
+			return before + after
+		}
+	}
+	return o.text
+}

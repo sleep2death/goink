@@ -19,7 +19,7 @@ func TestChoicesNesting(t *testing.T) {
                Gather A cotent
 			** Option A.3
 				A.3 Content
-				*** Option A.3.1
+				*** Option A.3[.]1
 					A.3.1 Content
 			** Option A.4
 		* Option B
@@ -45,23 +45,23 @@ func TestChoicesNesting(t *testing.T) {
 	rand.Seed(time.Now().UnixNano())
 
 	for s.Next() != nil {
-		t.Log(s.current.Path())
+		// t.Log(s.current.Path())
 		switch s.current.(type) {
 		case *Inline:
 			t.Log(s.current.(*Inline).Render())
 		case *Option:
-			t.Log(s.current.(*Option).Render())
+			t.Log(s.current.(*Option).Render(false))
 		case *Gather:
 			t.Log(s.current.(*Gather).Render())
 		case *Choices:
 			for _, o := range s.current.(*Choices).options {
-				t.Log("*", o.Render())
+				t.Log("*", o.Render(true))
 			}
 
 			// random select
 			idx := rand.Intn(len(s.current.(*Choices).options))
 			s.current.(*Choices).Select(idx)
-			t.Logf("Select [%d]", idx)
+			t.Logf("Select [%d]: %s", idx, s.current.(*Option).Render(false))
 		}
 	}
 
