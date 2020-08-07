@@ -64,6 +64,37 @@ func TestChoicesNesting(t *testing.T) {
 	assert.Equal(t, "Final Gather 2", s.current.(*Gather).raw)
 }
 
+func TestInkObjPath(t *testing.T) {
+	input := `
+	Hello, world!
+	-> Knot_A
+
+	== Knot_A ==
+	This is knot_a content.
+		= Stitch_A
+		This is stitch_a content.
+	== Knot_B ==
+	This is knot_a content.
+		= Stitch_A
+		This is stitch_a content.
+	`
+	s, err := parse(input)
+
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	// k for "knot"
+	assert.Equal(t, "root.k_Knot_A", s.knots[0].Path())
+
+	// s for "stitch"
+	assert.Equal(t, "root.k_Knot_A.s_Stitch_A", s.knots[0].stitches[0].Path())
+	assert.Equal(t, "root.k_Knot_B.s_Stitch_A", s.knots[1].stitches[0].Path())
+
+	assert.Equal(t, s.objMap["root.k_Knot_B.s_Stitch_A"], s.knots[1].stitches[0])
+}
+
 func parse(input string) (*Story, error) {
 	contents := strings.Split(input, "\n")
 

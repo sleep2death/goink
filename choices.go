@@ -49,6 +49,7 @@ func NewOption(s *Story, input string) error {
 
 			obj = obj.Parent()
 		}
+
 		if choices == nil {
 			choices = &Choices{story: s, parent: s.current, nesting: nesting}
 			s.current.SetNext(choices)

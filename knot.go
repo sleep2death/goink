@@ -22,8 +22,12 @@ func NewKnot(s *Story, input string) error {
 		}
 
 		k := &Knot{story: s, name: name}
+
 		s.knots = append(s.knots, k)
 		s.current = k
+
+		k.path = "root.k_"+ name
+		s.objMap[k.path] = k
 
 		return nil
 	}
@@ -64,6 +68,9 @@ func NewStitch(s *Story, input string) error {
 		stitch := &Stitch{story: s, name: name, knot: k}
 		k.stitches = append(k.stitches, stitch)
 		s.current = stitch
+
+		stitch.path = k.Path() + ".s_" + name
+		s.objMap[stitch.path] = stitch
 
 		return nil
 	}

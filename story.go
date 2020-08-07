@@ -71,6 +71,7 @@ func NewStory() *Story {
 	start := &Inline{raw: "[start]"}
 	story := &Story{start: start}
 	story.current = story.start
+	story.objMap = make(map[string]InkObj)
 
 	return story
 }
