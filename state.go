@@ -27,6 +27,6 @@ func (s *State) Path() string {
 }
 
 // Count collection of the current story
-func (s *State) Count(path string) map[string]int {
+func (s *State) Count() map[string]int {
 	return s.count
 }

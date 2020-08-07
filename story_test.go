@@ -132,6 +132,8 @@ func TestStorySave(t *testing.T) {
 	assert.Equal(t, "r.k_Knot_A.s_Stitch_A.c.0", o.Path())
 
 	state := s.Save()
+	assert.Equal(t, "r.k_Knot_A.s_Stitch_A.c.0", state.Path())
+	assert.Equal(t, 1, state.Count()["r.k_Knot_A.s_Stitch_A.c.0"])
 
 	// create a new story from the same source
 	ss, err := parse(input)

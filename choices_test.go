@@ -61,7 +61,9 @@ func TestChoicesSupressing(t *testing.T) {
 	* GHI[]JKL
 	* []MNO
 	* PQR[]
-	* [Hello], World
+	* [Hello], World -> Knot_A
+	== Knot_A
+	This is Knot A.
 	`
 	s, err := parse(input)
 	assert.Nil(t, err)
@@ -80,7 +82,8 @@ func TestChoicesSupressing(t *testing.T) {
 		assert.Equal(t, "PQR", c.options[3].Render(false))
 
 		assert.Equal(t, "Hello", c.options[4].Render(true))
-		assert.Equal(t, ", World", c.options[4].Render(false))
+		assert.Equal(t, ", World ", c.options[4].Render(false))
+		assert.Equal(t, "This is Knot A.", c.options[4].Next().(*Inline).Render())
 	} else {
 		t.Error("current is not choices")
 	}
