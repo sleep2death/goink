@@ -121,6 +121,7 @@ func (c *Choices) Select(idx int) *Option {
 	}
 
 	c.story.current = c.options[idx]
+	c.story.objCount[c.story.current.Path()] += 1
 	return c.options[idx]
 }
 

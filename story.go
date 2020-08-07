@@ -10,12 +10,12 @@ import (
 type Story struct {
 	start   InkObj
 	current InkObj
+	ln      int
+	knots   []*Knot
 
-	ln int
-
-	objMap map[string]InkObj
-
-	knots []*Knot
+	objMap   map[string]InkObj
+	objCount map[string]int
+	vars     map[string]interface{}
 }
 
 // Current content of the story
@@ -32,8 +32,19 @@ func (s *Story) Reset() {
 func (s *Story) Next() InkObj {
 	if next := s.current.Next(); next != nil {
 		s.current = next
+		s.objCount[s.current.Path()] += 1
+
 		return next
 	}
+	return nil
+}
+
+// Select the option of the current choices
+func (s *Story) Select(idx int) *Option {
+	if c, ok := s.current.(*Choices); ok {
+		return c.Select(idx)
+	}
+
 	return nil
 }
 
@@ -59,6 +70,27 @@ func (s *Story) Parse(input string) error {
 	return nil
 }
 
+// Save current state of the story
+func (s *Story) Save() *State {
+	return NewState(s)
+}
+
+// Load previous state into story
+func (s *Story) Load(state *State) error {
+	if obj, ok := s.objMap[state.path]; ok {
+		s.current = obj
+	} else {
+		return errors.Errorf("cannot find the obj: %s", state.path)
+	}
+
+	// copy all non-zero count into story's count
+	for k, v := range state.count {
+		s.objCount[k] = v
+	}
+
+	return nil
+}
+
 // ErrNotMatch the regexp error
 var ErrNotMatch error = errors.New("RegExp Not Match")
 
@@ -73,9 +105,12 @@ func NewStory() *Story {
 	parsers = append(parsers, NewKnot, NewStitch, NewOption, NewGather, NewInline)
 
 	start := &Inline{raw: "[start]", path: "r"}
+
 	story := &Story{start: start}
 	story.current = story.start
+
 	story.objMap = make(map[string]InkObj)
+	story.objCount = make(map[string]int)
 
 	return story
 }

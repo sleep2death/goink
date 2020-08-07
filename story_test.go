@@ -101,6 +101,52 @@ func TestInkObjPath(t *testing.T) {
 	// assert.Equal(t, s.objMap["r.k_Knot_B.s_Stitch_A"], s.knots[1].stitches[0])
 }
 
+func TestStorySave(t *testing.T) {
+	input := `
+	Hello, world!
+	-> Knot_A
+
+	== Knot_A ==
+	This is knot_a content. -> Stitch_A
+		= Stitch_A
+		* Option A
+		* Option B
+		- This is stitch_a content. -> Knot_B.Stitch_A
+	== Knot_B ==
+	This is knot_a content.
+		= Stitch_A
+		This is stitch_a content.
+	`
+	s, err := parse(input)
+
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	s.Next()
+	s.Next()
+	s.Next()
+	s.Next()
+	o := s.Select(0)
+	assert.Equal(t, "r.k_Knot_A.s_Stitch_A.c.0", o.Path())
+
+	state := s.Save()
+
+	// create a new story from the same source
+	ss, err := parse(input)
+	assert.Nil(t, err)
+	err = ss.Load(state)
+	t.Log(ss.objCount)
+	assert.Nil(t, err)
+	assert.Equal(t, "r.k_Knot_A.s_Stitch_A.c.0", s.Current().Path())
+	assert.Equal(t, 1, s.objCount[s.Current().Path()])
+
+	ss.Next()
+	ss.Next()
+	assert.Equal(t, "r.k_Knot_B.s_Stitch_A.i", ss.Current().Path())
+}
+
 func parse(input string) (*Story, error) {
 	contents := strings.Split(input, "\n")
 
