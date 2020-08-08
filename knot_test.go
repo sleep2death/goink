@@ -85,6 +85,7 @@ func TestStitchParse(t *testing.T) {
 	assert.Nil(t, err)
 
 	assert.Nil(t, s.FindDivert("Unknown", nil))
+	assert.Nil(t, s.FindDivert("Unknown.Unknown", nil))
 	assert.Nil(t, s.FindDivert("Unknown.Unknown.Unknown", nil))
 
 	assert.Equal(t, "Knot_A", s.FindDivert("Knot_A", nil).(*Knot).Name())
@@ -96,4 +97,45 @@ func TestStitchParse(t *testing.T) {
 	stitch := s.FindDivert("Knot_A.Stitch_A", nil).(*Stitch)
 	assert.Equal(t, s, stitch.Story())
 	assert.Equal(t, "Stitch_A Content", stitch.Next().(*Inline).Render())
+}
+
+func TestFindDivert(t *testing.T) {
+	input := `
+	-> Knot_A
+
+	== Knot_A
+		This is Knot_A ->Stitch_A
+		= Stitch_A
+		Stitch_A Content
+			* Option A
+			* Option B
+			- Gather -> Stitch_B
+		= Stitch_B
+		Finally...
+	`
+	s, err := parse(input)
+	assert.Nil(t, err)
+
+	s.Next()
+
+	assert.Equal(t, "Knot_A", s.FindDivert("Knot_A", s.Current()).(*Knot).Name())
+	assert.Equal(t, 0, s.FindDivertCount("Knot_A", nil))
+
+	s.Next()
+	assert.Equal(t, 1, s.FindDivertCount("Knot_A", nil))
+
+	s.Next()
+	s.Next()
+	s.Next()
+
+	assert.Equal(t, "Stitch_A Content", s.Current().(*Inline).Render())
+	assert.Equal(t, "Stitch_A", s.FindDivert("Stitch_A", s.Current()).(*Stitch).Name())
+
+	s.Next()
+	s.Select(0)
+	s.Next()
+	s.Next()
+	s.Next()
+
+	assert.Equal(t, 1, s.FindDivertCount("Stitch_A", s.Current()))
 }

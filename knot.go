@@ -208,16 +208,13 @@ func (s *Story) FindDivert(path string, obj InkObj) InkObj {
 }
 
 // FindDivertCount in the given path
-func (s *Story) FindDivertCount(path string) int {
-	split := strings.Split(path, ".")
-
-	switch len(split) {
-	case 1:
-	case 2:
-	case 3:
-		//TODO: Find label
+func (s *Story) FindDivertCount(path string, obj InkObj) int {
+	if res := s.FindDivert(path, obj); res != nil {
+		if count, ok := s.objCount[res.Path()]; ok {
+			return count
+		}
 	}
-	return -1
+	return 0
 }
 
 // FindKnot of the story by name
