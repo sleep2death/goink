@@ -142,11 +142,14 @@ func (i *Inline) Next() InkObj {
 			}
 
 			if k != nil && k.FindStitch(i.divert) != nil {
-				return k.FindStitch(i.divert).Next()
+				// fix knot and stitch visit count
+				// return k.FindStitch(i.divert).Next()
+				return k.FindStitch(i.divert)
 			}
 		}
 
-		return i.story.FindDivert(i.divert).Next()
+		// return i.story.FindDivert(i.divert).Next()
+		return i.story.FindDivert(i.divert)
 	}
 
 	// fallback to next

@@ -83,7 +83,7 @@ func TestChoicesSupressing(t *testing.T) {
 
 		assert.Equal(t, "Hello", c.options[4].Render(true))
 		assert.Equal(t, ", World ", c.options[4].Render(false))
-		assert.Equal(t, "This is Knot A.", c.options[4].Next().(*Inline).Render())
+		assert.Equal(t, "Knot_A", c.options[4].Next().(*Knot).name)
 	} else {
 		t.Error("current is not choices")
 	}
@@ -104,10 +104,13 @@ func TestStickyOption(t *testing.T) {
 	s.Next()
 	s.Select(0)
 	s.Next()
+	s.Next()
 
 	assert.Equal(t, 3, len(s.Current().(*Choices).Options()))
 
 	s.Select(0)
+
+	s.Next()
 	s.Next()
 	s.Next()
 
@@ -117,6 +120,7 @@ func TestStickyOption(t *testing.T) {
 	opt := s.Select(0)
 	assert.Equal(t, "Opt_B", opt.Render(false))
 
+	s.Next()
 	s.Next()
 	s.Next()
 

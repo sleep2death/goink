@@ -128,6 +128,9 @@ func TestStorySave(t *testing.T) {
 	s.Next()
 	s.Next()
 	s.Next()
+	s.Next()
+	s.Next()
+
 	o := s.Select(0)
 	assert.Equal(t, "r.k_Knot_A.s_Stitch_A.c.0", o.Path())
 
@@ -144,6 +147,7 @@ func TestStorySave(t *testing.T) {
 	assert.Equal(t, "r.k_Knot_A.s_Stitch_A.c.0", s.Current().Path())
 	assert.Equal(t, 1, s.objCount[s.Current().Path()])
 
+	ss.Next()
 	ss.Next()
 	ss.Next()
 	assert.Equal(t, "r.k_Knot_B.s_Stitch_A.i", ss.Current().Path())
