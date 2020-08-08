@@ -70,13 +70,13 @@ func TestDivert(t *testing.T) {
 		case *Gather:
 			t.Log(s.current.(*Gather).Render())
 		case *Choices:
-			for _, o := range s.current.(*Choices).options {
+			for _, o := range s.current.(*Choices).Options() {
 				t.Log("*", o.Render(true))
 			}
 
 			// random select
-			idx := rand.Intn(len(s.current.(*Choices).options))
-			s.current.(*Choices).Select(idx)
+			idx := rand.Intn(len(s.current.(*Choices).Options()))
+			s.Select(idx)
 			t.Logf("Select [%d]", idx)
 		}
 	}

@@ -138,8 +138,6 @@ func (c *Choices) Select(idx int) *Option {
 	}
 
 	opt := opts[idx]
-	c.story.current = opt
-	c.story.objCount[opt.Path()] += 1
 	return opt
 }
 

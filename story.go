@@ -42,7 +42,11 @@ func (s *Story) Next() InkObj {
 // Select the option of the current choices
 func (s *Story) Select(idx int) *Option {
 	if c, ok := s.current.(*Choices); ok {
-		return c.Select(idx)
+		if opt := c.Select(idx); opt != nil {
+			s.current = opt
+			s.objCount[opt.Path()] += 1
+			return opt
+		}
 	}
 
 	return nil
