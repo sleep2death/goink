@@ -83,3 +83,33 @@ func TestDivert(t *testing.T) {
 
 	assert.Equal(t, "Final Gather B", s.current.(*Gather).raw)
 }
+
+func TestGlueParse(t *testing.T) {
+	input := `
+	Glue Test 1
+	<>Glue Test 2
+	Glue Test 3 <>
+	<>Glue Test 4<>
+	`
+
+	s, err := parse(input)
+
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	s.Next()
+	s.Next()
+
+	assert.True(t, s.Current().(*Inline).glueStart)
+	assert.False(t, s.Current().(*Inline).glueEnd)
+
+	s.Next()
+	assert.True(t, s.Current().(*Inline).glueEnd)
+	assert.False(t, s.Current().(*Inline).glueStart)
+
+	s.Next()
+	assert.True(t, s.Current().(*Inline).glueEnd)
+	assert.True(t, s.Current().(*Inline).glueStart)
+}
