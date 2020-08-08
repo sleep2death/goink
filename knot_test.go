@@ -84,16 +84,16 @@ func TestStitchParse(t *testing.T) {
 	s, err := parse(input)
 	assert.Nil(t, err)
 
-	assert.Nil(t, s.FindDivert("Unknown"))
-	assert.Nil(t, s.FindDivert("Unknown.Unknown.Unknown"))
+	assert.Nil(t, s.FindDivert("Unknown", nil))
+	assert.Nil(t, s.FindDivert("Unknown.Unknown.Unknown", nil))
 
-	assert.Equal(t, "Knot_A", s.FindDivert("Knot_A").(*Knot).Name())
-	assert.Equal(t, s, s.FindDivert("Knot_A").(*Knot).Story())
+	assert.Equal(t, "Knot_A", s.FindDivert("Knot_A", nil).(*Knot).Name())
+	assert.Equal(t, s, s.FindDivert("Knot_A", nil).(*Knot).Story())
 
-	assert.Equal(t, "Stitch_A", s.FindDivert("Knot_A.Stitch_A").(*Stitch).Name())
-	assert.Equal(t, "Stitch_B", s.FindDivert("Knot_B.Stitch_B").(*Stitch).Name())
+	assert.Equal(t, "Stitch_A", s.FindDivert("Knot_A.Stitch_A", nil).(*Stitch).Name())
+	assert.Equal(t, "Stitch_B", s.FindDivert("Knot_B.Stitch_B", nil).(*Stitch).Name())
 
-	stitch := s.FindDivert("Knot_A.Stitch_A").(*Stitch)
+	stitch := s.FindDivert("Knot_A.Stitch_A", nil).(*Stitch)
 	assert.Equal(t, s, stitch.Story())
 	assert.Equal(t, "Stitch_A Content", stitch.Next().(*Inline).Render())
 }

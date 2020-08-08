@@ -123,33 +123,8 @@ func (i *Inline) SetNext(obj InkObj) {
 func (i *Inline) Next() InkObj {
 	// divert
 	if i.divert != "" {
-		split := strings.Split(i.divert, ".")
-		// find local stitch
-		if len(split) == 1 {
-			var k *Knot
-			obj := i.Parent()
-
-			for obj != nil {
-				if _, ok := obj.(*Knot); ok {
-					k = obj.(*Knot)
-					break
-				} else if _, ok := obj.(*Stitch); ok {
-					k = obj.(*Stitch).knot
-					break
-				}
-
-				obj = obj.Parent()
-			}
-
-			if k != nil && k.FindStitch(i.divert) != nil {
-				// fix knot and stitch visit count
-				// return k.FindStitch(i.divert).Next()
-				return k.FindStitch(i.divert)
-			}
-		}
-
 		// return i.story.FindDivert(i.divert).Next()
-		return i.story.FindDivert(i.divert)
+		return i.story.FindDivert(i.divert, i)
 	}
 
 	// fallback to next

@@ -165,23 +165,59 @@ func (s *Stitch) Next() InkObj {
 	return s.next
 }
 
-// FindDivert of the given obj
-func (s *Story) FindDivert(path string) InkObj {
+// FindDivert in the given path
+func (s *Story) FindDivert(path string, obj InkObj) InkObj {
 	split := strings.Split(path, ".")
 
 	switch len(split) {
 	case 1:
+		// find local stitch or lable first
+		if obj != nil {
+			var k *Knot
+			obj := obj.Parent()
+
+			for obj != nil {
+				if _, ok := obj.(*Knot); ok {
+					k = obj.(*Knot)
+					break
+				} else if _, ok := obj.(*Stitch); ok {
+					k = obj.(*Stitch).knot
+					break
+				}
+
+				obj = obj.Parent()
+			}
+
+			if k != nil {
+				// fix knot and stitch visit count
+				// return k.FindStitch(i.divert).Next()
+				if stitch := k.FindStitch(path); stitch != nil {
+					return stitch
+				}
+			}
+		}
 		return s.FindKnot(path)
 	case 2:
 		if k := s.FindKnot(split[0]); k != nil {
-			if s := k.FindStitch(split[1]); s != nil {
-				return s
-			}
+			return k.FindStitch(split[1])
 		}
 	case 3:
 		//TODO: Find label
 	}
 	return nil
+}
+
+// FindDivertCount in the given path
+func (s *Story) FindDivertCount(path string) int {
+	split := strings.Split(path, ".")
+
+	switch len(split) {
+	case 1:
+	case 2:
+	case 3:
+		//TODO: Find label
+	}
+	return -1
 }
 
 // FindKnot of the story by name
