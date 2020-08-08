@@ -22,6 +22,9 @@ var (
 	commentReg = regexp.MustCompile(`(^.*)(\/\/)(.+)$`)
 	tagReg     = regexp.MustCompile(`(^.*)(\#)(.+)$`)
 	divertReg  = regexp.MustCompile(`(^.*)(\-\>)(.+)$`)
+
+	glueStartReg = regexp.MustCompile(`^\<\>(.+)`)
+	glueEndReg   = regexp.MustCompile(`(.+)\<\>$`)
 )
 
 // NewInline parse and insert a new inline into story
@@ -80,6 +83,17 @@ func CreateNewInline(input string) (*Inline, error) {
 		i.divert = strings.TrimSpace(res[3])
 	}
 
+	// glue
+	if res := glueStartReg.FindStringSubmatch(input); res != nil {
+		i.glueStart = true
+		input = res[1]
+	}
+
+	if res := glueEndReg.FindStringSubmatch(input); res != nil {
+		i.glueEnd = true
+		input = res[1]
+	}
+
 	// text | spaces not trimmed
 	i.text = input
 	return i, nil
@@ -97,7 +111,11 @@ type Inline struct {
 	comment string
 	tags    []string
 	divert  string
-	text    string
+
+	glueStart bool
+	glueEnd   bool
+
+	text string
 }
 
 // Render the inline's content into string
