@@ -32,7 +32,7 @@ func (s *Story) Reset() {
 func (s *Story) Next() InkObj {
 	if next := s.current.Next(); next != nil {
 		s.current = next
-		s.objCount[s.current.Path()] += 1
+		s.objCount[s.current.Path()]++
 
 		return next
 	}
@@ -44,7 +44,7 @@ func (s *Story) Select(idx int) *Option {
 	if c, ok := s.current.(*Choices); ok {
 		if opt := c.Select(idx); opt != nil {
 			s.current = opt
-			s.objCount[opt.Path()] += 1
+			s.objCount[opt.Path()]++
 			return opt
 		}
 	}

@@ -26,7 +26,7 @@ var (
 
 // NewInline parse and insert a new inline into story
 func NewInline(s *Story, input string) error {
-	i, err := CreateNewline(input)
+	i, err := CreateNewInline(input)
 
 	if err != nil {
 		return err
@@ -44,7 +44,8 @@ func NewInline(s *Story, input string) error {
 	return nil
 }
 
-func CreateNewline(input string) (*Inline, error) {
+// CreateNewInline from the input
+func CreateNewInline(input string) (*Inline, error) {
 	// Inline
 	i := &Inline{raw: input}
 

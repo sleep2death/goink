@@ -140,7 +140,7 @@ func (s *Stitch) Name() string {
 	return s.name
 }
 
-// path of the stitch
+// Path of the stitch
 func (s *Stitch) Path() string {
 	return s.path
 }

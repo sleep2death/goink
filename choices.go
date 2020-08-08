@@ -17,7 +17,7 @@ func NewOption(s *Story, input string) error {
 	if res != nil {
 		nesting := len(strings.Join(strings.Fields(res[1]), ""))
 
-		i, err := CreateNewline(res[4])
+		i, err := CreateNewInline(res[4])
 		if err != nil {
 			return err
 		}
@@ -164,9 +164,8 @@ func (o *Option) Render(supressing bool) string {
 
 		if supressing {
 			return before + middle
-		} else {
-			return before + after
 		}
+		return before + after
 	}
 	return o.text
 }
