@@ -128,7 +128,7 @@ func TestStickyOption(t *testing.T) {
 	assert.Equal(t, 2, len(s.Current().(*Choices).Options()))
 }
 
-func ParseConditionalOptionParse(t *testing.T) {
+func TestConditionalOption(t *testing.T) {
 	input := `
 	* {conditional_a} ABC
 	+ {conditional_b } DEF
@@ -139,6 +139,8 @@ func ParseConditionalOptionParse(t *testing.T) {
 	assert.Nil(t, err)
 
 	s.Next()
+	choices := s.Current().(*Choices)
+	t.Log(choices.Options()[0])
 
 	assert.Equal(t, "conditional_a", s.Current().(*Choices).Options()[0].condition.raw)
 	assert.Equal(t, "conditional_b", s.Current().(*Choices).Options()[1].condition.raw)

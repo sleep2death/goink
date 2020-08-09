@@ -66,7 +66,10 @@ func NewOption(s *Story, input string) error {
 
 			s.current.SetNext(choices)
 		}
+
 		o.path = choices.path + "." + strconv.Itoa(len(choices.options))
+		o.ParseCondition()
+
 		choices.options = append(choices.options, o)
 		s.objMap[o.path] = o
 
@@ -75,7 +78,6 @@ func NewOption(s *Story, input string) error {
 		s.current = o
 
 		// condition parse
-		o.ParseCondition()
 
 		return nil
 	}
@@ -159,7 +161,7 @@ type Option struct {
 }
 
 var (
-	exprReg       = regexp.MustCompile(`^\{(.+)}\}(.*)`)
+	exprReg       = regexp.MustCompile(`^\{(.+)\}(.*)`)
 	supressingReg = regexp.MustCompile(`(^.*)\[(.*)\](.*$)`)
 )
 
@@ -181,6 +183,6 @@ func (o *Option) Render(supressing bool) string {
 
 func (o *Option) ParseCondition() {
 	if res := exprReg.FindStringSubmatch(o.text); res != nil {
-		o.condition = NewCondition(res[1])
+		o.condition = NewCondition(strings.TrimSpace(res[1]))
 	}
 }
