@@ -184,5 +184,6 @@ func (o *Option) Render(supressing bool) string {
 func (o *Option) ParseCondition() {
 	if res := exprReg.FindStringSubmatch(o.text); res != nil {
 		o.condition = NewCondition(strings.TrimSpace(res[1]))
+		o.text = res[2]
 	}
 }

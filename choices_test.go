@@ -139,10 +139,13 @@ func TestConditionalOption(t *testing.T) {
 	assert.Nil(t, err)
 
 	s.Next()
-	choices := s.Current().(*Choices)
-	t.Log(choices.Options()[0])
 
-	assert.Equal(t, "conditional_a", s.Current().(*Choices).Options()[0].condition.raw)
-	assert.Equal(t, "conditional_b", s.Current().(*Choices).Options()[1].condition.raw)
-	assert.Nil(t, s.Current().(*Choices).Options()[2].condition)
+	choices := s.Current().(*Choices)
+	options := choices.Options()
+
+	assert.Equal(t, "conditional_a", options[0].condition.raw)
+	assert.Equal(t, " ABC", options[0].Render(false))
+	assert.Equal(t, "conditional_b", options[1].condition.raw)
+	assert.Equal(t, " DEF", options[1].Render(false))
+	assert.Nil(t, options[2].condition)
 }
