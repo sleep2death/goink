@@ -73,6 +73,10 @@ func NewOption(s *Story, input string) error {
 		// s.current.SetNext(o)
 		o.parent = choices
 		s.current = o
+
+		// condition parse
+		o.ParseCondition()
+
 		return nil
 	}
 
@@ -149,10 +153,15 @@ func (c *Choices) Nesting() int {
 // Option node of the choices
 type Option struct {
 	*Inline
-	sticky bool
+
+	sticky    bool
+	condition *Condition
 }
 
-var supressingReg = regexp.MustCompile(`(^.*)\[(.*)\](.*$)`)
+var (
+	exprReg       = regexp.MustCompile(`^\{(.+)}\}(.*)`)
+	supressingReg = regexp.MustCompile(`(^.*)\[(.*)\](.*$)`)
+)
 
 // Render option text with supressing
 func (o *Option) Render(supressing bool) string {
@@ -168,4 +177,10 @@ func (o *Option) Render(supressing bool) string {
 		return before + after
 	}
 	return o.text
+}
+
+func (o *Option) ParseCondition() {
+	if res := exprReg.FindStringSubmatch(o.text); res != nil {
+		o.condition = NewCondition(res[1])
+	}
 }

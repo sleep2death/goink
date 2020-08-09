@@ -127,3 +127,20 @@ func TestStickyOption(t *testing.T) {
 	// sticky
 	assert.Equal(t, 2, len(s.Current().(*Choices).Options()))
 }
+
+func ParseConditionalOptionParse(t *testing.T) {
+	input := `
+	* {conditional_a} ABC
+	+ {conditional_b } DEF
+	* GHI { conditional_c } JKL
+	`
+
+	s, err := parse(input)
+	assert.Nil(t, err)
+
+	s.Next()
+
+	assert.Equal(t, "conditional_a", s.Current().(*Choices).Options()[0].condition.raw)
+	assert.Equal(t, "conditional_b", s.Current().(*Choices).Options()[1].condition.raw)
+	assert.Nil(t, s.Current().(*Choices).Options()[2].condition)
+}
