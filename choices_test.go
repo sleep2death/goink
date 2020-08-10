@@ -130,7 +130,7 @@ func TestStickyOption(t *testing.T) {
 
 func TestConditionalOption(t *testing.T) {
 	input := `
-	* {conditional_a} ABC
+	* {conditional_a > 0} ABC
 	+ {conditional_b } DEF
 	* GHI { conditional_c } JKL
 	`
@@ -143,7 +143,7 @@ func TestConditionalOption(t *testing.T) {
 	choices := s.Current().(*Choices)
 	options := choices.Options()
 
-	assert.Equal(t, "conditional_a", options[0].condition.raw)
+	assert.Equal(t, "conditional_a > 0", options[0].condition.raw)
 	assert.Equal(t, " ABC", options[0].Render(false))
 	assert.Equal(t, "conditional_b", options[1].condition.raw)
 	assert.Equal(t, " DEF", options[1].Render(false))
