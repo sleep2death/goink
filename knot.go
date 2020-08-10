@@ -29,7 +29,10 @@ func NewKnot(s *Story, input string) error {
 		k.path = name
 		k.ln = s.ln
 
-		// s.objMap[k.path] = k
+		if s.objMap[k.path] != nil {
+			return errors.Errorf("conflict knot name: %s", name)
+		}
+		s.objMap[k.path] = k
 
 		return nil
 	}
@@ -73,7 +76,11 @@ func NewStitch(s *Story, input string) error {
 
 		stitch.path = k.Path() + "." + name
 		stitch.ln = s.ln
-		// s.objMap[stitch.path] = stitch
+
+		if s.objMap[stitch.path] != nil {
+			return errors.Errorf("conflict stitch name: %s", name)
+		}
+		s.objMap[stitch.path] = stitch
 
 		return nil
 	}

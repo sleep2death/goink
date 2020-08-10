@@ -125,6 +125,21 @@ func (c *Choices) Next() InkObj {
 // Options of the choices
 func (c *Choices) Options() (os []*Option) {
 	for _, opt := range c.options {
+		// condition test
+		if opt.condition != nil {
+			b, err := opt.condition.Bool(c.story.objCount)
+			if err != nil {
+				panic(err)
+			}
+
+			// will not display, when condition test is false
+			// no matter sticky or not
+			if b == false {
+				continue
+			}
+		}
+
+		// sticky or once-only
 		if opt.sticky {
 			os = append(os, opt)
 		} else if count, ok := c.story.objCount[opt.Path()]; !ok || count == 0 {

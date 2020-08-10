@@ -3,19 +3,17 @@ package goink
 import (
 	"github.com/antonmedv/expr"
 	"github.com/antonmedv/expr/vm"
+	"github.com/pkg/errors"
 )
 
+// Condition of the inline
 type Condition struct {
 	// env     map[string]interface{}
 	program *vm.Program
 	raw     string
 }
 
-type env struct {
-	count map[string]int
-	vars  map[string]interface{}
-}
-
+// NewCondition creates a condition with the given expr
 func NewCondition(code string) *Condition {
 	cond := &Condition{raw: code}
 	program, err := expr.Compile(code, expr.Env(nil))
@@ -26,4 +24,20 @@ func NewCondition(code string) *Condition {
 
 	cond.program = program
 	return cond
+}
+
+// Bool return the expr result as bool value
+func (c *Condition) Bool(count map[string]int) (bool, error) {
+	output, err := expr.Run(c.program, count)
+	if err != nil {
+		return false, err
+	}
+
+	b, ok := output.(bool)
+	if !ok {
+		return false, errors.Errorf("output is not a bool value: %s", c.program.Source.Content())
+	}
+
+	return b, nil
+
 }

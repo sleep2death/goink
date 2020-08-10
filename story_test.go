@@ -169,6 +169,5 @@ func parse(input string) (*Story, error) {
 	}
 
 	s.Reset()
-
 	return s, nil
 }
