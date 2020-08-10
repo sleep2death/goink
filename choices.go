@@ -68,7 +68,7 @@ func NewOption(s *Story, input string) error {
 		}
 
 		o.path = choices.path + "." + strconv.Itoa(len(choices.options))
-		o.ParseCondition()
+		o.parseCondition()
 
 		choices.options = append(choices.options, o)
 		s.objMap[o.path] = o
@@ -181,7 +181,7 @@ func (o *Option) Render(supressing bool) string {
 	return o.text
 }
 
-func (o *Option) ParseCondition() {
+func (o *Option) parseCondition() {
 	if res := exprReg.FindStringSubmatch(o.text); res != nil {
 		o.condition = NewCondition(strings.TrimSpace(res[1]))
 		o.text = res[2]
