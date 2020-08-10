@@ -134,7 +134,7 @@ func (c *Choices) Options() (os []*Option) {
 
 			// will not display, when condition test is false
 			// no matter sticky or not
-			if b == false {
+			if !b {
 				continue
 			}
 		}

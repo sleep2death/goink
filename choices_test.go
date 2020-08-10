@@ -141,7 +141,8 @@ func TestConditionalOption(t *testing.T) {
 	s.Next()
 
 	choices := s.Current().(*Choices)
-	options := choices.Options()
+	options := choices.options
+	// options := choices.Options()
 
 	assert.Equal(t, "conditional_a > 0", options[0].condition.raw)
 	assert.Equal(t, " ABC", options[0].Render(false))

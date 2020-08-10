@@ -66,8 +66,8 @@ func TestKnotVisitCount(t *testing.T) {
 
 	condition0 := c.Options()[0].condition
 	assert.Equal(t, "Knot_A > 0", condition0.program.Source.Content())
-	b, err := condition0.Bool(s.objCount)
 
+	b, err := condition0.Bool(s.objCount)
 	assert.Nil(t, err)
 	assert.True(t, b)
 }
