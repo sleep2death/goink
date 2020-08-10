@@ -68,7 +68,7 @@ func NewOption(s *Story, input string) error {
 		}
 
 		o.path = choices.path + "." + strconv.Itoa(len(choices.options))
-		o.ParseCondition()
+		o.parseCondition()
 
 		choices.options = append(choices.options, o)
 		s.objMap[o.path] = o
@@ -125,6 +125,21 @@ func (c *Choices) Next() InkObj {
 // Options of the choices
 func (c *Choices) Options() (os []*Option) {
 	for _, opt := range c.options {
+		// condition test
+		if opt.condition != nil {
+			b, err := opt.condition.Bool(c.story.objCount)
+			if err != nil {
+				panic(err)
+			}
+
+			// will not display, when condition test is false
+			// no matter sticky or not
+			if !b {
+				continue
+			}
+		}
+
+		// sticky or once-only
 		if opt.sticky {
 			os = append(os, opt)
 		} else if count, ok := c.story.objCount[opt.Path()]; !ok || count == 0 {
@@ -181,7 +196,7 @@ func (o *Option) Render(supressing bool) string {
 	return o.text
 }
 
-func (o *Option) ParseCondition() {
+func (o *Option) parseCondition() {
 	if res := exprReg.FindStringSubmatch(o.text); res != nil {
 		o.condition = NewCondition(strings.TrimSpace(res[1]))
 		o.text = res[2]
