@@ -68,7 +68,14 @@ func NewOption(s *Story, input string) error {
 		}
 
 		o.path = choices.path + "." + strconv.Itoa(len(choices.options))
-		o.parseCondition()
+
+		// post parsing process
+		if err := o.parseCondition(); err != nil {
+			return err
+		}
+		if err := o.parseLabel(); err != nil {
+			return err
+		}
 
 		choices.options = append(choices.options, o)
 		s.objMap[o.path] = o
@@ -172,11 +179,13 @@ type Option struct {
 	*Inline
 
 	sticky    bool
+	label     string
 	condition *Condition
 }
 
 var (
-	exprReg       = regexp.MustCompile(`^\{(.+)\}(.*)`)
+	exprReg       = regexp.MustCompile(`^\s*\{(.+)\}(.*)`)
+	labelReg      = regexp.MustCompile(`^\s*\((.+)\)(.*)`)
 	supressingReg = regexp.MustCompile(`(^.*)\[(.*)\](.*$)`)
 )
 
@@ -196,9 +205,39 @@ func (o *Option) Render(supressing bool) string {
 	return o.text
 }
 
-func (o *Option) parseCondition() {
+func (o *Option) parseCondition() error {
 	if res := exprReg.FindStringSubmatch(o.text); res != nil {
-		o.condition = NewCondition(strings.TrimSpace(res[1]))
-		o.text = res[2]
+		if c, err := NewCondition(strings.TrimSpace(res[1])); err == nil {
+			o.condition = c
+			o.text = res[2]
+		} else {
+			return err
+		}
 	}
+
+	return nil
+}
+
+// Condition of the option
+func (o *Option) Condition() *Condition {
+	return o.condition
+}
+
+func (o *Option) parseLabel() error {
+	if res := labelReg.FindStringSubmatch(o.text); res != nil {
+		o.label = strings.TrimSpace(res[1])
+		o.text = res[2]
+		if _, ok := o.story.vars[o.label]; ok {
+			return errors.Errorf("labelled alias has already been set: %s", o.label)
+		}
+
+		o.story.vars[o.label] = o.Path()
+	}
+
+	return nil
+}
+
+// Label of the option
+func (o *Option) Label() string {
+	return o.label
 }

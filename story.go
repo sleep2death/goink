@@ -15,7 +15,7 @@ type Story struct {
 
 	objMap   map[string]InkObj
 	objCount map[string]int
-	// vars     map[string]interface{}
+	vars     map[string]interface{}
 }
 
 // Current content of the story
@@ -115,6 +115,7 @@ func NewStory() *Story {
 
 	story.objMap = make(map[string]InkObj)
 	story.objCount = make(map[string]int)
+	story.vars = make(map[string]interface{})
 
 	return story
 }

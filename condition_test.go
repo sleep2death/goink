@@ -7,15 +7,20 @@ import (
 )
 
 func TestNewCondition(t *testing.T) {
-	condA := NewCondition("not (Knot_A > 0)")
-	condB := NewCondition("Knot_B == 0")
-	condC := NewCondition("abc +  def")
-	condD := NewCondition("(Knot_A > 0) and (Knot_B == 0)")
+	condA, err := NewCondition("not (Knot_A > 0)")
+	assert.Nil(t, err)
 
-	panicFunc := func() {
-		NewCondition("aae ~|> def")
-	}
-	assert.Panics(t, panicFunc)
+	condB, err := NewCondition("Knot_B == 0")
+	assert.Nil(t, err)
+
+	condC, err := NewCondition("abc +  def")
+	assert.Nil(t, err)
+
+	condD, err := NewCondition("(Knot_A > 0) and (Knot_B == 0)")
+	assert.Nil(t, err)
+
+	_, err = NewCondition("(Knot_A > 0 and (Knot_B == 0)")
+	assert.NotNil(t, err)
 
 	env := make(map[string]int)
 	env["Knot_A"] = 1

@@ -14,16 +14,16 @@ type Condition struct {
 }
 
 // NewCondition creates a condition with the given expr
-func NewCondition(code string) *Condition {
+func NewCondition(code string) (*Condition, error) {
 	cond := &Condition{raw: code}
 	program, err := expr.Compile(code, expr.Env(nil))
 
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	cond.program = program
-	return cond
+	return cond, nil
 }
 
 // Bool return the expr result as bool value

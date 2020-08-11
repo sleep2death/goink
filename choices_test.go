@@ -150,3 +150,21 @@ func TestConditionalOption(t *testing.T) {
 	assert.Equal(t, " DEF", options[1].Render(false))
 	assert.Nil(t, options[2].condition)
 }
+
+func TestLabelledOption(t *testing.T) {
+	input := `
+	* {conditional_a > 0} ( label_a ) ABC
+	+ {conditional_b } (label_b) abc[DEF]def
+	* GHI { conditional_c } JKL
+	`
+	s, err := parse(input)
+	assert.Nil(t, err)
+
+	s.Next()
+	choices := s.Current().(*Choices)
+	options := choices.options
+	assert.Equal(t, "label_a", options[0].label)
+	assert.Equal(t, "label_b", options[1].label)
+
+	assert.Equal(t, " abcDEF", options[1].Render(true))
+}
