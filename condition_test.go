@@ -7,10 +7,10 @@ import (
 )
 
 func TestNewCondition(t *testing.T) {
-	condB := NewCondition("Knot_B == 0")
 	condA := NewCondition("not (Knot_A > 0)")
-
+	condB := NewCondition("Knot_B == 0")
 	condC := NewCondition("abc +  def")
+	condD := NewCondition("(Knot_A > 0) and (Knot_B == 0)")
 
 	panicFunc := func() {
 		NewCondition("aae ~|> def")
@@ -33,6 +33,10 @@ func TestNewCondition(t *testing.T) {
 	_, err = condC.Bool(env)
 	assert.NotNil(t, err)
 	// assert.True(t, b)
+
+	b, err = condD.Bool(env)
+	assert.Nil(t, err)
+	assert.True(t, b)
 }
 
 func TestKnotVisitCount(t *testing.T) {
