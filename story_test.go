@@ -66,8 +66,8 @@ func TestChoicesNesting(t *testing.T) {
 	}
 
 	assert.Equal(t, "Final Content", s.current.(*Inline).Render())
-	assert.Equal(t, "Knot_A.stitch_a.i", s.current.Path())
-	assert.Equal(t, s.objMap["Knot_A.stitch_a.i"], s.current)
+	assert.Equal(t, "Knot_A#stitch_a#i", s.current.Path())
+	assert.Equal(t, s.objMap["Knot_A#stitch_a#i"], s.current)
 }
 
 func TestInkObjPath(t *testing.T) {
@@ -95,8 +95,8 @@ func TestInkObjPath(t *testing.T) {
 	assert.Equal(t, "Knot_A", s.knots[0].Path())
 
 	// s for "stitch"
-	assert.Equal(t, "Knot_A.Stitch_A", s.knots[0].stitches[0].Path())
-	assert.Equal(t, "Knot_B.Stitch_A", s.knots[1].stitches[0].Path())
+	assert.Equal(t, "Knot_A#Stitch_A", s.knots[0].stitches[0].Path())
+	assert.Equal(t, "Knot_B#Stitch_A", s.knots[1].stitches[0].Path())
 
 	// assert.Equal(t, s.objMap["r.k_Knot_B.s_Stitch_A"], s.knots[1].stitches[0])
 }
@@ -138,11 +138,11 @@ func TestStorySave(t *testing.T) {
 	assert.Nil(t, o)
 
 	o = s.Select(0)
-	assert.Equal(t, "Knot_A.Stitch_A.c.0", o.Path())
+	assert.Equal(t, "Knot_A#Stitch_A#c#0", o.Path())
 
 	state := s.Save()
-	assert.Equal(t, "Knot_A.Stitch_A.c.0", state.Path())
-	assert.Equal(t, 1, state.Count()["Knot_A.Stitch_A.c.0"])
+	assert.Equal(t, "Knot_A#Stitch_A#c#0", state.Path())
+	assert.Equal(t, 1, state.Count()["Knot_A#Stitch_A#c#0"])
 
 	// create a new story from the same source
 	ss, err := parse(input)
@@ -150,13 +150,13 @@ func TestStorySave(t *testing.T) {
 	err = ss.Load(state)
 
 	assert.Nil(t, err)
-	assert.Equal(t, "Knot_A.Stitch_A.c.0", s.Current().Path())
+	assert.Equal(t, "Knot_A#Stitch_A#c#0", s.Current().Path())
 	assert.Equal(t, 1, s.objCount[s.Current().Path()])
 
 	ss.Next()
 	ss.Next()
 	ss.Next()
-	assert.Equal(t, "Knot_B.Stitch_A.i", ss.Current().Path())
+	assert.Equal(t, "Knot_B#Stitch_A#i", ss.Current().Path())
 
 	state.path = "invalid path"
 	err = ss.Load(state)
