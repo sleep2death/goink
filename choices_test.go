@@ -144,9 +144,9 @@ func TestConditionalOption(t *testing.T) {
 	options := choices.options
 	// options := choices.Options()
 
-	assert.Equal(t, "conditional_a > 0", options[0].condition.raw)
+	assert.Equal(t, "conditional_a > 0", options[0].Condition().raw)
 	assert.Equal(t, " ABC", options[0].Render(false))
-	assert.Equal(t, "conditional_b", options[1].condition.raw)
+	assert.Equal(t, "conditional_b", options[1].Condition().raw)
 	assert.Equal(t, " DEF", options[1].Render(false))
 	assert.Nil(t, options[2].condition)
 }

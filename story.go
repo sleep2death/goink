@@ -23,6 +23,67 @@ func (s *Story) Current() InkObj {
 	return s.current
 }
 
+// GetContainer of the current inkObj
+func (s *Story) FindContainer(obj InkObj) (*Knot, *Stitch) {
+	for obj != nil {
+		if st, ok := obj.(*Stitch); ok {
+			return st.knot, st
+		} else if k, ok := obj.(*Knot); ok {
+			return k, nil
+		}
+		obj = obj.Parent()
+	}
+
+	return nil, nil
+}
+
+// FindDivertCount in the given path
+func (s *Story) FindDivertCount(path string, obj InkObj) int {
+	if res := s.FindDivert(path, obj); res != nil {
+		if count, ok := s.objCount[res.Path()]; ok {
+			return count
+		}
+	}
+	return 0
+}
+
+// FindKnot of the story by name
+func (s *Story) FindKnot(name string) *Knot {
+	if k, ok := s.objMap[name]; ok {
+		if knot, b := k.(*Knot); b {
+			return knot
+		} else {
+			panic(errors.Errorf("type error with the name: %s", name))
+		}
+	}
+
+	return nil
+}
+
+// FindDivert in the given path
+func (s *Story) FindDivert(path string, obj InkObj) InkObj {
+	split := strings.Split(path, ".")
+	knot, _ := s.FindContainer(obj)
+
+	switch len(split) {
+	case 1: // could be - local label || local stitch || story's knot
+		// find local stitch or lable first
+		if knot != nil && knot.FindStitch(path) != nil {
+			return knot.FindStitch(path)
+		}
+		// TODO: local label
+
+		return s.FindKnot(path)
+	case 2: // could be - local stitch.label || knot.stitch
+		if k := s.FindKnot(split[0]); k != nil {
+			return k.FindStitch(split[1])
+		}
+	case 3: // could be - knot.stitch.label
+		//TODO: Find label
+	}
+	return nil
+}
+
 // Reset the current content to start
 func (s *Story) Reset() {
 	s.current = s.start

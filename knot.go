@@ -2,7 +2,6 @@ package goink
 
 import (
 	"regexp"
-	"strings"
 
 	"github.com/pkg/errors"
 )
@@ -17,12 +16,7 @@ func NewKnot(s *Story, input string) error {
 	if result != nil {
 		name := result[3]
 
-		if s.FindKnot(name) != nil {
-			return errors.Errorf("conflict knot name: %s", name)
-		}
-
 		k := &Knot{story: s, name: name}
-
 		s.knots = append(s.knots, k)
 		s.current = k
 
@@ -47,21 +41,7 @@ func NewStitch(s *Story, input string) error {
 	if result != nil {
 		name := result[3]
 
-		obj := s.current
-
-		var k *Knot
-		for obj != nil {
-			if _, ok := obj.(*Knot); ok {
-				k = obj.(*Knot)
-				break
-			} else if _, ok := obj.(*Stitch); ok {
-				k = obj.(*Stitch).knot
-				break
-			}
-
-			obj = obj.Parent()
-		}
-
+		k, _ := s.FindContainer(s.current)
 		if k == nil {
 			return errors.Errorf("can not find the knot of the stitch: %s", input)
 		}
@@ -172,74 +152,15 @@ func (s *Stitch) Next() InkObj {
 	return s.next
 }
 
-// FindDivert in the given path
-func (s *Story) FindDivert(path string, obj InkObj) InkObj {
-	split := strings.Split(path, ".")
-
-	switch len(split) {
-	case 1:
-		// find local stitch or lable first
-		if obj != nil {
-			var k *Knot
-			obj := obj.Parent()
-
-			for obj != nil {
-				if _, ok := obj.(*Knot); ok {
-					k = obj.(*Knot)
-					break
-				} else if _, ok := obj.(*Stitch); ok {
-					k = obj.(*Stitch).knot
-					break
-				}
-
-				obj = obj.Parent()
-			}
-
-			if k != nil {
-				// fix knot and stitch visit count
-				// return k.FindStitch(i.divert).Next()
-				if stitch := k.FindStitch(path); stitch != nil {
-					return stitch
-				}
-			}
-		}
-		return s.FindKnot(path)
-	case 2:
-		if k := s.FindKnot(split[0]); k != nil {
-			return k.FindStitch(split[1])
-		}
-	case 3:
-		//TODO: Find label
-	}
-	return nil
-}
-
-// FindDivertCount in the given path
-func (s *Story) FindDivertCount(path string, obj InkObj) int {
-	if res := s.FindDivert(path, obj); res != nil {
-		if count, ok := s.objCount[res.Path()]; ok {
-			return count
-		}
-	}
-	return 0
-}
-
-// FindKnot of the story by name
-func (s *Story) FindKnot(name string) *Knot {
-	for _, k := range s.knots {
-		if k.name == name {
-			return k
-		}
-	}
-	return nil
-}
-
 // FindStitch of the knot by name
 func (k *Knot) FindStitch(name string) *Stitch {
-	for _, s := range k.stitches {
-		if s.name == name {
-			return s
+	if s, ok := k.story.objMap[k.name+"."+name]; ok {
+		if stitch, b := s.(*Stitch); b {
+			return stitch
+		} else {
+			panic(errors.Errorf("type error with the name: %s", name))
 		}
 	}
+
 	return nil
 }
