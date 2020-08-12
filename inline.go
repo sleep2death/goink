@@ -26,7 +26,7 @@ var (
 	glueStartReg = regexp.MustCompile(`^\<\>(.+)`)
 	glueEndReg   = regexp.MustCompile(`(.+)\<\>$`)
 
-	labelReg = regexp.MustCompile(`^\s*\((.+)\)(.*)`)
+	lableReg = regexp.MustCompile(`^\s*\((.+)\)(.*)`)
 )
 
 // NewInline parse and insert a new inline into story
@@ -40,7 +40,7 @@ func NewInline(s *Story, input string) error {
 	i.story = s
 	i.parent = s.current
 
-	i.path = s.current.Path() + "#i"
+	i.path = s.current.Path() + split + "i"
 	s.objMap[i.path] = i
 
 	s.current.SetNext(i)

@@ -178,7 +178,7 @@ func TestLablledOptionAndGather(t *testing.T) {
 	- (lable_g) Gather -> Stitch_A // label will overwrite inline's path
 	= Stitch_A
 	* {Knot_A > 0} ( lable_a ) ABC
-	+ {Knot_A#lable_g > 0} (lable_b) abc[DEF]def
+	+ {Knot_A__lable_g > 0} (lable_b) abc[DEF]def
 	* GHI { conditional_c } JKL
 	`
 	s, err := parse(input)
@@ -193,13 +193,13 @@ func TestLablledOptionAndGather(t *testing.T) {
 	s.Select(0)
 	s.Next()
 
-	assert.Equal(t, "Knot_A#lable_g", s.Current().(*Gather).Path())
+	assert.Equal(t, "Knot_A__lable_g", s.Current().(*Gather).Path())
 	s.Next()
 	s.Next()
 
-	assert.Equal(t, 1, s.objCount["Knot_A#lable_g"])
+	assert.Equal(t, 1, s.objCount["Knot_A__lable_g"])
 	options := s.Current().(*Choices).Options()
 	assert.Equal(t, 3, len(options))
 
-	assert.Equal(t, "Knot_A#Stitch_A#lable_a", options[0].Path())
+	assert.Equal(t, "Knot_A__Stitch_A__lable_a", options[0].Path())
 }

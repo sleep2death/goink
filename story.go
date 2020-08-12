@@ -162,6 +162,8 @@ type ParseFunc func(s *Story, input string) error
 
 var parsers []ParseFunc
 
+const split string = "__"
+
 // NewStory create an empty story instance
 func NewStory() *Story {
 	// Inline always be the last parser

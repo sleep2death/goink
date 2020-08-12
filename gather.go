@@ -64,13 +64,13 @@ func NewGather(s *Story, input string) error {
 }
 
 func (g *Gather) parseLabel() error {
-	if res := labelReg.FindStringSubmatch(g.text); res != nil {
+	if res := lableReg.FindStringSubmatch(g.text); res != nil {
 		label := strings.TrimSpace(res[1])
 		if len(label) > 0 {
 			if knot, stitch := g.story.FindContainer(g); stitch != nil {
-				label = stitch.Path() + "#" + label
+				label = stitch.Path() + split + label
 			} else if knot != nil {
-				label = knot.Path() + "#" + label
+				label = knot.Path() + split + label
 			}
 
 			if _, ok := g.story.objMap[label]; ok {
