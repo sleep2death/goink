@@ -69,14 +69,6 @@ func NewOption(s *Story, input string) error {
 
 		o.path = choices.path + "." + strconv.Itoa(len(choices.options))
 
-		// post parsing process
-		if err := o.parseCondition(); err != nil {
-			return err
-		}
-		if err := o.parseLabel(); err != nil {
-			return err
-		}
-
 		choices.options = append(choices.options, o)
 		s.objMap[o.path] = o
 
@@ -84,8 +76,13 @@ func NewOption(s *Story, input string) error {
 		o.parent = choices
 		s.current = o
 
-		// condition parse
-
+		// post parsing process
+		if err := o.parseCondition(); err != nil {
+			return err
+		}
+		if err := o.parseLabel(); err != nil {
+			return err
+		}
 		return nil
 	}
 
@@ -225,13 +222,18 @@ func (o *Option) Condition() *Condition {
 
 func (o *Option) parseLabel() error {
 	if res := labelReg.FindStringSubmatch(o.text); res != nil {
-		o.label = strings.TrimSpace(res[1])
-		o.text = res[2]
-		if _, ok := o.story.vars[o.label]; ok {
-			return errors.Errorf("labelled alias has already been set: %s", o.label)
-		}
+		label := strings.TrimSpace(res[1])
+		if len(label) > 0 {
+			if knot, stitch := o.story.FindContainer(o); stitch != nil {
+				label = stitch.Path() + "." + label
+			} else if knot != nil {
+				label = knot.Path() + "." + label
+			}
 
-		o.story.vars[o.label] = o.Path()
+			o.story.objMap[label] = o
+			o.label = label
+		}
+		o.text = res[2]
 	}
 
 	return nil

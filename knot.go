@@ -157,8 +157,6 @@ func (k *Knot) FindStitch(name string) *Stitch {
 	if s, ok := k.story.objMap[k.name+"."+name]; ok {
 		if stitch, b := s.(*Stitch); b {
 			return stitch
-		} else {
-			panic(errors.Errorf("type error with the name: %s", name))
 		}
 	}
 

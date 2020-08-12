@@ -127,11 +127,17 @@ func TestStorySave(t *testing.T) {
 	s.Next()
 	s.Next()
 	s.Next()
+
+	assert.Equal(t, "Knot_A", s.Current().Path())
+
 	s.Next()
 	s.Next()
 	s.Next()
 
-	o := s.Select(0)
+	o := s.Select(8) // invalid test
+	assert.Nil(t, o)
+
+	o = s.Select(0)
 	assert.Equal(t, "Knot_A.Stitch_A.c.0", o.Path())
 
 	state := s.Save()

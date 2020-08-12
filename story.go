@@ -52,8 +52,6 @@ func (s *Story) FindKnot(name string) *Knot {
 	if k, ok := s.objMap[name]; ok {
 		if knot, b := k.(*Knot); b {
 			return knot
-		} else {
-			panic(errors.Errorf("type error with the name: %s", name))
 		}
 	}
 
@@ -66,15 +64,15 @@ func (s *Story) FindDivert(path string, obj InkObj) InkObj {
 	knot, _ := s.FindContainer(obj)
 
 	switch len(split) {
-	case 1: // could be - local label || local stitch || story's knot
-		// find local stitch or lable first
+	case 1: // local label || local stitch || story's knot
+		// find local stitch
 		if knot != nil && knot.FindStitch(path) != nil {
 			return knot.FindStitch(path)
 		}
 		// TODO: local label
 
 		return s.FindKnot(path)
-	case 2: // could be - local stitch.label || knot.stitch
+	case 2: // local stitch.label || knot.stitch
 		if k := s.FindKnot(split[0]); k != nil {
 			return k.FindStitch(split[1])
 		}
