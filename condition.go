@@ -1,10 +1,14 @@
 package goink
 
 import (
+	"regexp"
+
 	"github.com/antonmedv/expr"
 	"github.com/antonmedv/expr/vm"
 	"github.com/pkg/errors"
 )
+
+var regReplaceDot = regexp.MustCompile(`\.(\w+)`)
 
 // Condition of the inline
 type Condition struct {
@@ -16,7 +20,9 @@ type Condition struct {
 // NewCondition creates a condition with the given expr
 func NewCondition(code string) (*Condition, error) {
 	cond := &Condition{raw: code}
-	program, err := expr.Compile(code, expr.Env(nil))
+	c := regReplaceDot.ReplaceAllString(code, split+"$1")
+
+	program, err := expr.Compile(c, expr.Env(nil))
 
 	if err != nil {
 		return nil, err
@@ -32,6 +38,8 @@ func (c *Condition) Bool(count map[string]int) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+
+	// fmt.Println(c.program.Source.Content(), output, count["Knot_A-gather"])
 
 	b, ok := output.(bool)
 	if !ok {

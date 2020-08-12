@@ -23,7 +23,7 @@ func (s *Story) Current() InkObj {
 	return s.current
 }
 
-// GetContainer of the current inkObj
+// FindContainer of the current inkObj
 func (s *Story) FindContainer(obj InkObj) (*Knot, *Stitch) {
 	for obj != nil {
 		if st, ok := obj.(*Stitch); ok {
@@ -161,6 +161,8 @@ var ErrNotMatch error = errors.New("RegExp Not Match")
 type ParseFunc func(s *Story, input string) error
 
 var parsers []ParseFunc
+
+const split string = "__"
 
 // NewStory create an empty story instance
 func NewStory() *Story {

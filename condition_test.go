@@ -80,3 +80,47 @@ func TestKnotVisitCount(t *testing.T) {
 	assert.Nil(t, err)
 	assert.True(t, b)
 }
+
+func TestLableVisitCount(t *testing.T) {
+	input := `
+	-> Knot_A
+
+	== Knot_A ==
+		* { Knot_A > 0 }Option A
+		* { Knot_B > 0 }Option B
+		- (gather)Gather A -> Knot_B
+	=== Knot_B ===
+		+ {Knot_A.gather > 0} Option A
+		+ {Knot_A.gather == 0} Option B
+		- -> END
+	`
+	s, err := parse(input)
+
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	s.Next()
+	s.Next()
+	s.Next()
+
+	c, ok := s.Current().(*Choices)
+	assert.True(t, ok)
+	assert.Equal(t, 1, len(c.Options()))
+
+	s.Select(0)
+
+	s.Next()
+	s.Next()
+	s.Next()
+
+	c, ok = s.Current().(*Choices)
+	assert.True(t, ok)
+
+	// t.Log(s.objCount["Knot_A-gather"])
+	t.Log(c.Options()[0].condition.program.Source.Content())
+	// t.Log(c.Options()[0].condition.Bool(s.objCount))
+	assert.Equal(t, 1, len(c.Options()))
+	assert.Equal(t, " Option A", c.Options()[0].Render(false))
+}

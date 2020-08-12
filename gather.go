@@ -49,11 +49,38 @@ func NewGather(s *Story, input string) error {
 
 			g.path = choices.Path() + ".g"
 			s.objMap[g.path] = g
+
+			if err := g.parseLabel(); err != nil {
+				return err
+			}
+
 			return nil
 		}
 
-		return errors.Errorf("cannot find the choice of the gather: %s", input)
+		return errors.Errorf("cannot find the choices of the gather: %s", input)
 	}
 
 	return ErrNotMatch
+}
+
+func (g *Gather) parseLabel() error {
+	if res := lableReg.FindStringSubmatch(g.text); res != nil {
+		label := strings.TrimSpace(res[1])
+		if len(label) > 0 {
+			if knot, stitch := g.story.FindContainer(g); stitch != nil {
+				label = stitch.Path() + split + label
+			} else if knot != nil {
+				label = knot.Path() + split + label
+			}
+
+			if _, ok := g.story.objMap[label]; ok {
+				return errors.Errorf("duplicated label: %s", label)
+			}
+			g.story.objMap[label] = g
+			g.path = label
+		}
+		g.text = res[2]
+	}
+
+	return nil
 }
