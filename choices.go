@@ -63,7 +63,6 @@ func NewOption(s *Story, input string) error {
 
 			choices.path = s.current.Path() + "#c"
 			s.objMap[choices.path] = choices
-
 			s.current.SetNext(choices)
 		}
 

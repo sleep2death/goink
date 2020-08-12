@@ -23,7 +23,7 @@ func (s *Story) Current() InkObj {
 	return s.current
 }
 
-// GetContainer of the current inkObj
+// FindContainer of the current inkObj
 func (s *Story) FindContainer(obj InkObj) (*Knot, *Stitch) {
 	for obj != nil {
 		if st, ok := obj.(*Stitch); ok {
