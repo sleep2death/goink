@@ -32,7 +32,7 @@ var (
 
 // NewInline parse and insert a new inline into story
 func NewInline(s *Story, input string) error {
-	i, err := CreateNewInline(input)
+	i, err := createNewInline(input)
 
 	if err != nil {
 		return err
@@ -50,8 +50,8 @@ func NewInline(s *Story, input string) error {
 	return nil
 }
 
-// CreateNewInline from the input
-func CreateNewInline(input string) (*Inline, error) {
+// createNewInline from the input
+func createNewInline(input string) (*Inline, error) {
 	// Inline
 	i := &Inline{raw: input}
 
@@ -121,8 +121,8 @@ type Inline struct {
 	text string
 }
 
-// Render the inline's content into string
-func (i *Inline) Render() string {
+// render the inline's content into string
+func (i *Inline) render() string {
 	return i.text
 }
 
@@ -146,7 +146,7 @@ func (i *Inline) Next() InkObj {
 	// divert
 	if i.divert != "" {
 		// return i.story.FindDivert(i.divert).Next()
-		if target := i.story.FindDivert(i.divert, i); target != nil {
+		if target := i.story.findDivert(i.divert, i); target != nil {
 			return target
 		}
 

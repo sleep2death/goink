@@ -48,24 +48,24 @@ func TestChoicesNesting(t *testing.T) {
 		// t.Log(s.current.Path())
 		switch s.current.(type) {
 		case *Inline:
-			t.Log(s.current.(*Inline).Render())
+			t.Log(s.current.(*Inline).render())
 		case *Option:
 			t.Log(s.current.(*Option).Render(false))
 		case *Gather:
-			t.Log(s.current.(*Gather).Render())
+			t.Log(s.current.(*Gather).render())
 		case *Choices:
-			for _, o := range s.current.(*Choices).Options() {
+			for _, o := range s.current.(*Choices).options() {
 				t.Log("*", o.Render(true))
 			}
 
 			// random select
-			idx := rand.Intn(len(s.current.(*Choices).Options()))
+			idx := rand.Intn(len(s.current.(*Choices).options()))
 			s.Select(idx)
 			t.Logf("Select [%d]: %s", idx, s.current.(*Option).Render(false))
 		}
 	}
 
-	assert.Equal(t, "Final Content", s.current.(*Inline).Render())
+	assert.Equal(t, "Final Content", s.current.(*Inline).render())
 	assert.Equal(t, "Knot_A__stitch_a__i", s.current.Path())
 	assert.Equal(t, s.objMap["Knot_A__stitch_a__i"], s.current)
 }
@@ -169,7 +169,7 @@ func parse(input string) (*Story, error) {
 	s := NewStory()
 
 	for _, line := range contents {
-		if err := s.Parse(line); err != nil {
+		if err := s.parseLine(line); err != nil {
 			return nil, err
 		}
 	}

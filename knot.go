@@ -46,7 +46,7 @@ func NewStitch(s *Story, input string) error {
 			return errors.Errorf("can not find the knot of the stitch: %s", input)
 		}
 
-		if k.FindStitch(name) != nil {
+		if k.findStitch(name) != nil {
 			return errors.Errorf("conflict stitch name: %s", name)
 		}
 
@@ -153,8 +153,8 @@ func (s *Stitch) Next() InkObj {
 	return s.next
 }
 
-// FindStitch of the knot by name
-func (k *Knot) FindStitch(name string) *Stitch {
+// findStitch of the knot by name
+func (k *Knot) findStitch(name string) *Stitch {
 	if s, ok := k.story.objMap[k.name+split+name]; ok {
 		if stitch, b := s.(*Stitch); b {
 			return stitch

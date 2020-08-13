@@ -20,7 +20,7 @@ func NewGather(s *Story, input string) error {
 	res := gatherReg.FindStringSubmatch(input)
 	if res != nil {
 		nesting := len(strings.Join(strings.Fields(res[1]), ""))
-		i, err := CreateNewInline(res[3])
+		i, err := createNewInline(res[3])
 		if err != nil {
 			return err
 		}

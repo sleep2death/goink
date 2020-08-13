@@ -17,7 +17,7 @@ func NewOption(s *Story, input string) error {
 	if res != nil {
 		nesting := len(strings.Join(strings.Fields(res[1]), ""))
 
-		i, err := CreateNewInline(res[4])
+		i, err := createNewInline(res[4])
 		if err != nil {
 			return err
 		}
@@ -66,9 +66,9 @@ func NewOption(s *Story, input string) error {
 			s.current.SetNext(choices)
 		}
 
-		o.path = choices.path + split + strconv.Itoa(len(choices.options))
+		o.path = choices.path + split + strconv.Itoa(len(choices.opts))
 
-		choices.options = append(choices.options, o)
+		choices.opts = append(choices.opts, o)
 		s.objMap[o.path] = o
 
 		// s.current.SetNext(o)
@@ -90,10 +90,10 @@ func NewOption(s *Story, input string) error {
 
 // Choices of the story
 type Choices struct {
-	story   *Story
-	parent  InkObj
-	options []*Option
-	path    string
+	story  *Story
+	parent InkObj
+	opts   []*Option
+	path   string
 
 	gather  *Gather
 	nesting int
@@ -125,9 +125,9 @@ func (c *Choices) Next() InkObj {
 	return nil
 }
 
-// Options of the choices
-func (c *Choices) Options() (os []*Option) {
-	for _, opt := range c.options {
+// options of the choices
+func (c *Choices) options() (os []*Option) {
+	for _, opt := range c.opts {
 		// condition test
 		if opt.condition != nil {
 			b, err := opt.condition.Bool(c.story.objCount)
@@ -152,10 +152,10 @@ func (c *Choices) Options() (os []*Option) {
 	return os
 }
 
-// Select the option of the choices by index
-func (c *Choices) Select(idx int) *Option {
+// choose the option of the choices by index
+func (c *Choices) choose(idx int) *Option {
 	// filtered options
-	opts := c.Options()
+	opts := c.options()
 
 	if idx >= len(opts) || idx < 0 {
 		return nil
@@ -163,11 +163,6 @@ func (c *Choices) Select(idx int) *Option {
 
 	opt := opts[idx]
 	return opt
-}
-
-// Nesting of the choices
-func (c *Choices) Nesting() int {
-	return c.nesting
 }
 
 // Option node of the choices
@@ -210,11 +205,6 @@ func (o *Option) parseCondition() error {
 	}
 
 	return nil
-}
-
-// Condition of the option
-func (o *Option) Condition() *Condition {
-	return o.condition
 }
 
 func (o *Option) parseLabel() error {
