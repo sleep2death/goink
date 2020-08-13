@@ -146,7 +146,11 @@ func (i *Inline) Next() InkObj {
 	// divert
 	if i.divert != "" {
 		// return i.story.FindDivert(i.divert).Next()
-		return i.story.FindDivert(i.divert, i)
+		if target := i.story.FindDivert(i.divert, i); target != nil {
+			return target
+		}
+
+		panic(errors.Errorf("can not find the divert: %s", i.divert))
 	}
 
 	// fallback to next

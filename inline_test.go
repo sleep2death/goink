@@ -113,3 +113,47 @@ func TestGlueParse(t *testing.T) {
 	assert.True(t, s.Current().(*Inline).glueEnd)
 	assert.True(t, s.Current().(*Inline).glueStart)
 }
+
+func TestDivertNavigation(t *testing.T) {
+	input := `
+	-> Knot_A.stitch_b.lable_g
+	== Knot_A
+	This is Knot A.
+	= stitch_b
+	This is stitch b. -> stitch_c.lable_g
+	* opt a
+	+ opt b
+	- (lable_g) gather -> stitch_b
+	= stitch_c
+	+ (lable_o) opt a -> unkown-divert
+	+ opt b
+	- (lable_g) gather c-> lable_o
+	`
+
+	s, err := parse(input)
+
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	s.Next()
+	s.Next()
+	assert.Equal(t, " gather ", s.Current().(*Gather).Render())
+
+	s.Next()
+	assert.Equal(t, "stitch_b", s.Current().(*Stitch).name)
+
+	s.Next()
+	s.Next()
+	assert.Equal(t, " gather c", s.Current().(*Gather).Render())
+
+	s.Next()
+	assert.Equal(t, " opt a ", s.Current().(*Option).Render(false))
+
+	pf := assert.PanicTestFunc(func() {
+		s.Next()
+	})
+
+	assert.Panics(t, pf)
+}
