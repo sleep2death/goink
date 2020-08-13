@@ -240,3 +240,19 @@ func TestChoicesParseError(t *testing.T) {
 	_, err := parse(input)
 	assert.NotNil(t, err)
 }
+
+func TestInvalidOptions(t *testing.T) {
+	input := `
+    * {'lable_a'} Option A
+    * (lable_b) Option B
+    + (lable_c) -> Option B
+	`
+	s, err := parse(input)
+	assert.Nil(t, err)
+
+	p := assert.PanicTestFunc(func() {
+		s.Next().(*Choices).Options()
+	})
+
+	assert.Panics(t, p)
+}
