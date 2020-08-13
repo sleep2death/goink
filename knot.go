@@ -41,7 +41,7 @@ func NewStitch(s *Story, input string) error {
 	if result != nil {
 		name := result[3]
 
-		k, _ := s.FindContainer(s.current)
+		k, _ := s.findContainer(s.current)
 		if k == nil {
 			return errors.Errorf("can not find the knot of the stitch: %s", input)
 		}

@@ -23,8 +23,8 @@ func (s *Story) Current() InkObj {
 	return s.current
 }
 
-// FindContainer of the current inkObj
-func (s *Story) FindContainer(obj InkObj) (*Knot, *Stitch) {
+// findContainer of the current inkObj
+func (s *Story) findContainer(obj InkObj) (*Knot, *Stitch) {
 	for obj != nil {
 		if st, ok := obj.(*Stitch); ok {
 			return st.knot, st
@@ -61,7 +61,7 @@ func (s *Story) FindKnot(name string) *Knot {
 // FindDivert in the given path
 func (s *Story) FindDivert(path string, obj InkObj) InkObj {
 	sp := strings.Split(path, ".")
-	knot, st := s.FindContainer(obj)
+	knot, st := s.findContainer(obj)
 
 	switch len(sp) {
 	case 1: // local label || local stitch || story's knot

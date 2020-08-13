@@ -221,7 +221,7 @@ func (o *Option) parseLabel() error {
 	if res := lableReg.FindStringSubmatch(o.text); res != nil {
 		label := strings.TrimSpace(res[1])
 		if len(label) > 0 {
-			if knot, stitch := o.story.FindContainer(o); stitch != nil {
+			if knot, stitch := o.story.findContainer(o); stitch != nil {
 				label = stitch.Path() + split + label
 			} else if knot != nil {
 				label = knot.Path() + split + label

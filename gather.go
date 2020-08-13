@@ -67,7 +67,7 @@ func (g *Gather) parseLabel() error {
 	if res := lableReg.FindStringSubmatch(g.text); res != nil {
 		label := strings.TrimSpace(res[1])
 		if len(label) > 0 {
-			if knot, stitch := g.story.FindContainer(g); stitch != nil {
+			if knot, stitch := g.story.findContainer(g); stitch != nil {
 				label = stitch.Path() + split + label
 			} else if knot != nil {
 				label = knot.Path() + split + label
