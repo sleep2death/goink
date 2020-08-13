@@ -26,7 +26,8 @@ var (
 	glueStartReg = regexp.MustCompile(`^\<\>(.+)`)
 	glueEndReg   = regexp.MustCompile(`(.+)\<\>$`)
 
-	lableReg = regexp.MustCompile(`^\s*\((.+)\)(.*)`)
+	lableReg         = regexp.MustCompile(`^\s*\((.+)\)(.*)`)
+	illegalGatherReg = regexp.MustCompile(`\-\-\>`)
 )
 
 // NewInline parse and insert a new inline into story
@@ -55,7 +56,7 @@ func CreateNewInline(input string) (*Inline, error) {
 	i := &Inline{raw: input}
 
 	// illegal gather sign
-	if input[:1] == "-" && input[:2] != "->" {
+	if res := illegalGatherReg.FindStringSubmatch(input); res != nil {
 		return nil, errors.Errorf("illegal gather character: %s", input)
 	}
 

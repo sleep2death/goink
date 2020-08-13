@@ -174,7 +174,7 @@ func TestLablledOptionAndGather(t *testing.T) {
 	-> Knot_A
 	== Knot_A ==
 	* Option A
-	* Option B
+	* (lable_b) Option B
 	- (lable_g) Gather -> Stitch_A // label will overwrite inline's path
 	= Stitch_A
 	* {Knot_A > 0} ( lable_a ) ABC
@@ -189,6 +189,7 @@ func TestLablledOptionAndGather(t *testing.T) {
 	s.Next()
 
 	assert.Equal(t, 2, len(s.Current().(*Choices).Options()))
+	assert.Equal(t, "Knot_A__lable_b", s.Current().(*Choices).Options()[1].Path())
 
 	s.Select(0)
 	s.Next()
@@ -202,4 +203,40 @@ func TestLablledOptionAndGather(t *testing.T) {
 	assert.Equal(t, 3, len(options))
 
 	assert.Equal(t, "Knot_A__Stitch_A__lable_a", options[0].Path())
+}
+
+func TestDuplicatedLabel(t *testing.T) {
+	input := `
+    * (lable_a) Option A
+    * (lable_b) Option B
+    + (lable_a)Option B
+	`
+	_, err := parse(input)
+	assert.Equal(t, "duplicated label: lable_a", err.Error())
+
+	input = `
+	-> Knot_A
+	== Knot_A
+	This is Knot A content. -> Stitch_A
+	= Stitch_A
+    * (lable_a) Option A
+    * (lable_b) Option B -> Knot_B
+	== Knot_B
+    + (lable_a)Option B
+	= Stitch_A
+    * (lable_a) Option A
+    * (lable_b) Option B
+	`
+	_, err = parse(input)
+	assert.Nil(t, err)
+}
+
+func TestChoicesParseError(t *testing.T) {
+	input := `
+    * (lable_a) Option A
+    * (lable_b) Option B
+    + (lable_c) --> Option B
+	`
+	_, err := parse(input)
+	assert.NotNil(t, err)
 }

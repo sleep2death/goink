@@ -123,4 +123,19 @@ func TestLableVisitCount(t *testing.T) {
 	// t.Log(c.Options()[0].condition.Bool(s.objCount))
 	assert.Equal(t, 1, len(c.Options()))
 	assert.Equal(t, " Option A", c.Options()[0].Render(false))
+
+	input = `
+	-> Knot_A
+
+	== Knot_A ==
+		* { Knot_A > 0) }Option A // invalid condition
+		* { Knot_B > 0 }Option B
+		- (gather)Gather A -> Knot_B
+	=== Knot_B ===
+		+ {Knot_A.gather > 0} Option A
+		+ {Knot_A.gather == 0} Option B
+		- -> END
+	`
+	_, err = parse(input)
+	assert.NotNil(t, err)
 }
