@@ -10,7 +10,6 @@ import (
 type Story struct {
 	start   InkObj
 	current InkObj
-	ln      int
 	knots   []*Knot
 
 	objMap   map[string]InkObj
@@ -157,7 +156,6 @@ func (s *Story) parseLine(input string) error {
 		return nil
 	}
 
-	s.ln++
 	for _, parser := range parsers {
 		if err := parser(s, input); err != nil {
 			if err != ErrNotMatch {

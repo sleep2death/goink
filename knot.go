@@ -21,7 +21,6 @@ func NewKnot(s *Story, input string) error {
 		s.current = k
 
 		k.path = name
-		k.ln = s.ln
 
 		if s.objMap[k.path] != nil {
 			return errors.Errorf("conflict knot name: %s", name)
@@ -55,7 +54,6 @@ func NewStitch(s *Story, input string) error {
 		s.current = stitch
 
 		stitch.path = k.Path() + split + name
-		stitch.ln = s.ln
 
 		// do not need check again
 		/* if s.objMap[stitch.path] != nil {
