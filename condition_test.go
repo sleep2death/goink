@@ -19,11 +19,19 @@ func TestNewCondition(t *testing.T) {
 	condD, err := NewCondition("(Knot_A > 0) and (Knot_B == 0)")
 	assert.Nil(t, err)
 
+	condE, err := NewCondition("intA + intB")
+	assert.Nil(t, err)
+
+	condF, err := NewCondition("'intA' + 'intB'")
+	assert.Nil(t, err)
+
 	_, err = NewCondition("(Knot_A > 0 and (Knot_B == 0)")
 	assert.NotNil(t, err)
 
 	env := make(map[string]int)
 	env["Knot_A"] = 1
+	env["intA"] = 2
+	env["intB"] = -1
 
 	b, err := condA.Bool(env)
 
@@ -35,13 +43,21 @@ func TestNewCondition(t *testing.T) {
 	assert.Nil(t, err)
 	assert.True(t, b)
 
-	_, err = condC.Bool(env)
-	assert.NotNil(t, err)
-	// assert.True(t, b)
+	b, err = condC.Bool(env)
+	assert.Nil(t, err)
+	assert.False(t, b)
 
 	b, err = condD.Bool(env)
 	assert.Nil(t, err)
 	assert.True(t, b)
+
+	b, err = condE.Bool(env)
+	assert.Nil(t, err)
+	assert.True(t, b)
+
+	b, err = condF.Bool(env)
+	assert.NotNil(t, err)
+	assert.False(t, b)
 }
 
 func TestKnotVisitCount(t *testing.T) {

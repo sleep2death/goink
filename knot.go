@@ -57,9 +57,10 @@ func NewStitch(s *Story, input string) error {
 		stitch.path = k.Path() + split + name
 		stitch.ln = s.ln
 
-		if s.objMap[stitch.path] != nil {
+		// do not need check again
+		/* if s.objMap[stitch.path] != nil {
 			return errors.Errorf("conflict stitch name: %s", name)
-		}
+		} */
 		s.objMap[stitch.path] = stitch
 
 		return nil

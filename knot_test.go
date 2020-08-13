@@ -139,3 +139,22 @@ func TestFindDivert(t *testing.T) {
 
 	assert.Equal(t, 1, s.FindDivertCount("Stitch_A", s.Current()))
 }
+
+func TestConfictKnotAndStitchName(t *testing.T) {
+	input := `
+	-> Knot_A
+
+	== Knot_A
+		This is Knot_A ->Stitch_A
+		= Stitch_A
+		Stitch_A Content
+			* Option A
+			* Option B
+			- Gather -> Stitch_B
+		= Stitch_A
+		Finally...
+	`
+	_, err := parse(input)
+	assert.NotNil(t, err)
+	assert.Equal(t, "conflict stitch name: Stitch_A", err.Error())
+}

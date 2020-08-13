@@ -42,10 +42,14 @@ func (c *Condition) Bool(count map[string]int) (bool, error) {
 	// fmt.Println(c.program.Source.Content(), output, count["Knot_A-gather"])
 
 	b, ok := output.(bool)
-	if !ok {
-		return false, errors.Errorf("output is not a bool value: %s", c.program.Source.Content())
+	if ok {
+		return b, nil
 	}
 
-	return b, nil
+	i, ok := output.(int)
+	if ok {
+		return (i > 0), nil
+	}
 
+	return false, errors.Errorf("output is not a bool value: %v", output)
 }
