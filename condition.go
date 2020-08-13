@@ -20,7 +20,7 @@ type Condition struct {
 // NewCondition creates a condition with the given expr
 func NewCondition(code string) (*Condition, error) {
 	cond := &Condition{raw: code}
-	c := regReplaceDot.ReplaceAllString(code, split+"$1")
+	c := regReplaceDot.ReplaceAllString(code, SPLIT+"$1")
 
 	program, err := expr.Compile(c, expr.Env(nil))
 

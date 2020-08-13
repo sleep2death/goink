@@ -47,7 +47,7 @@ func NewGather(s *Story, input string) error {
 			choices.gather = g
 			s.current = g
 
-			g.path = choices.Path() + split + "g"
+			g.path = choices.Path() + SPLIT + "g"
 			s.objMap[g.path] = g
 
 			if err := g.parseLabel(); err != nil {
@@ -68,9 +68,9 @@ func (g *Gather) parseLabel() error {
 		label := strings.TrimSpace(res[1])
 		if len(label) > 0 {
 			if knot, stitch := g.story.findContainer(g); stitch != nil {
-				label = stitch.Path() + split + label
+				label = stitch.Path() + SPLIT + label
 			} else if knot != nil {
-				label = knot.Path() + split + label
+				label = knot.Path() + SPLIT + label
 			}
 
 			if _, ok := g.story.objMap[label]; ok {

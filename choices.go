@@ -61,12 +61,12 @@ func NewOption(s *Story, input string) error {
 		if choices == nil {
 			choices = &Choices{story: s, parent: s.current, nesting: nesting}
 
-			choices.path = s.current.Path() + split + "c"
+			choices.path = s.current.Path() + SPLIT + "c"
 			s.objMap[choices.path] = choices
 			s.current.SetNext(choices)
 		}
 
-		o.path = choices.path + split + strconv.Itoa(len(choices.opts))
+		o.path = choices.path + SPLIT + strconv.Itoa(len(choices.opts))
 
 		choices.opts = append(choices.opts, o)
 		s.objMap[o.path] = o
@@ -212,9 +212,9 @@ func (o *Option) parseLabel() error {
 		label := strings.TrimSpace(res[1])
 		if len(label) > 0 {
 			if knot, stitch := o.story.findContainer(o); stitch != nil {
-				label = stitch.Path() + split + label
+				label = stitch.Path() + SPLIT + label
 			} else if knot != nil {
-				label = knot.Path() + split + label
+				label = knot.Path() + SPLIT + label
 			}
 
 			if _, ok := o.story.objMap[label]; ok {

@@ -14,7 +14,6 @@ type Story struct {
 
 	objMap   map[string]InkObj
 	objCount map[string]int
-	vars     map[string]interface{}
 }
 
 // Current content of the story
@@ -25,6 +24,7 @@ func (s *Story) Current() InkObj {
 // Reset the current content to start
 func (s *Story) Reset() {
 	s.current = s.start
+	s.objCount = make(map[string]int)
 }
 
 // Next content of the story
@@ -72,7 +72,7 @@ func (s *Story) Load(state *State) error {
 	return nil
 }
 
-// findContainer of the current inkObj
+// find container of the current inkObj
 func (s *Story) findContainer(obj InkObj) (*Knot, *Stitch) {
 	for obj != nil {
 		if st, ok := obj.(*Stitch); ok {
@@ -86,7 +86,7 @@ func (s *Story) findContainer(obj InkObj) (*Knot, *Stitch) {
 	return nil, nil
 }
 
-// findDivertCount in the given path
+// find divert count in the given path
 func (s *Story) findDivertCount(path string, obj InkObj) int {
 	if res := s.findDivert(path, obj); res != nil {
 		if count, ok := s.objCount[res.Path()]; ok {
@@ -96,7 +96,7 @@ func (s *Story) findDivertCount(path string, obj InkObj) int {
 	return 0
 }
 
-// findKnot of the story by name
+// find knot of the story by name
 func (s *Story) findKnot(name string) *Knot {
 	if k, ok := s.objMap[name]; ok {
 		if knot, b := k.(*Knot); b {
@@ -107,7 +107,7 @@ func (s *Story) findKnot(name string) *Knot {
 	return nil
 }
 
-// findDivert in the given path
+// find divert in the given path
 func (s *Story) findDivert(path string, obj InkObj) InkObj {
 	sp := strings.Split(path, ".")
 	knot, st := s.findContainer(obj)
@@ -116,7 +116,7 @@ func (s *Story) findDivert(path string, obj InkObj) InkObj {
 	case 1: // local label || local stitch || story's knot
 		// local label
 		if knot != nil && st != nil {
-			p := knot.name + split + st.name + split + path
+			p := knot.name + SPLIT + st.name + SPLIT + path
 			if s.objMap[p] != nil {
 				return s.objMap[p]
 			}
@@ -131,8 +131,8 @@ func (s *Story) findDivert(path string, obj InkObj) InkObj {
 		}
 	case 2: // local stitch.label || knot.stitch
 		if knot != nil {
-			p := regReplaceDot.ReplaceAllString(path, split+"$1")
-			p = knot.name + split + p
+			p := regReplaceDot.ReplaceAllString(path, SPLIT+"$1")
+			p = knot.name + SPLIT + p
 			if s.objMap[p] != nil {
 				return s.objMap[p]
 			}
@@ -141,14 +141,14 @@ func (s *Story) findDivert(path string, obj InkObj) InkObj {
 			return k.findStitch(sp[1])
 		}
 	default: // could be - knot.stitch.label
-		p := regReplaceDot.ReplaceAllString(path, split+"$1")
+		p := regReplaceDot.ReplaceAllString(path, SPLIT+"$1")
 		// fmt.Println(path)
 		return s.objMap[p]
 	}
 	return nil
 }
 
-// parseLine input string into story's content
+// parse single line input into story's content
 func (s *Story) parseLine(input string) error {
 	// trim spaces and skip empty lines
 	input = strings.TrimRight(strings.TrimSpace(input), "\r\n")
@@ -177,24 +177,7 @@ type ParseFunc func(s *Story, input string) error
 
 var parsers []ParseFunc
 
-const split string = "__"
-
-// NewStory create an empty story instance
-func NewStory() *Story {
-	// Inline always be the last parser
-	parsers = append(parsers, NewKnot, NewStitch, NewOption, NewGather, NewInline)
-
-	start := &Inline{raw: "[start]", path: "r"}
-
-	story := &Story{start: start}
-	story.current = story.start
-
-	story.objMap = make(map[string]InkObj)
-	story.objCount = make(map[string]int)
-	story.vars = make(map[string]interface{})
-
-	return story
-}
+const SPLIT string = "__"
 
 // Parse lines of ink file into new story
 func Parse(input string) (*Story, error) {
@@ -210,4 +193,20 @@ func Parse(input string) (*Story, error) {
 
 	s.Reset()
 	return s, nil
+}
+
+// NewStory create an empty story instance
+func NewStory() *Story {
+	// Inline always be the last parser
+	parsers = append(parsers, NewKnot, NewStitch, NewOption, NewGather, NewInline)
+
+	start := &Inline{raw: "[start]", path: "r"}
+
+	story := &Story{start: start}
+	story.current = story.start
+
+	story.objMap = make(map[string]InkObj)
+	story.objCount = make(map[string]int)
+
+	return story
 }

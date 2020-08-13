@@ -53,7 +53,7 @@ func NewStitch(s *Story, input string) error {
 		k.stitches = append(k.stitches, stitch)
 		s.current = stitch
 
-		stitch.path = k.Path() + split + name
+		stitch.path = k.Path() + SPLIT + name
 
 		// do not need check again
 		/* if s.objMap[stitch.path] != nil {
@@ -72,9 +72,7 @@ type Knot struct {
 	story *Story
 	name  string
 
-	path string
-	ln   int
-
+	path     string
 	stitches []*Stitch
 	next     InkObj
 }
@@ -116,8 +114,6 @@ type Stitch struct {
 	name  string
 
 	path string
-	ln   int
-
 	next InkObj
 }
 
@@ -153,7 +149,7 @@ func (s *Stitch) Next() InkObj {
 
 // findStitch of the knot by name
 func (k *Knot) findStitch(name string) *Stitch {
-	if s, ok := k.story.objMap[k.name+split+name]; ok {
+	if s, ok := k.story.objMap[k.name+SPLIT+name]; ok {
 		if stitch, b := s.(*Stitch); b {
 			return stitch
 		}

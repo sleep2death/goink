@@ -41,7 +41,7 @@ func NewInline(s *Story, input string) error {
 	i.story = s
 	i.parent = s.current
 
-	i.path = s.current.Path() + split + "i"
+	i.path = s.current.Path() + SPLIT + "i"
 	s.objMap[i.path] = i
 
 	s.current.SetNext(i)
