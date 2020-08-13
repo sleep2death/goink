@@ -66,9 +66,8 @@ func (s *Story) FindDivert(path string, obj InkObj) InkObj {
 	switch len(sp) {
 	case 1: // local label || local stitch || story's knot
 		// local label
-		if knot != nil {
-			p := regReplaceDot.ReplaceAllString(path, split+"$1")
-			p = knot.name + split + st.name + split + p
+		if knot != nil && st != nil {
+			p := knot.name + split + st.name + split + path
 			if s.objMap[p] != nil {
 				return s.objMap[p]
 			}
@@ -77,9 +76,10 @@ func (s *Story) FindDivert(path string, obj InkObj) InkObj {
 		if knot != nil && knot.FindStitch(path) != nil {
 			return knot.FindStitch(path)
 		}
-		// TODO: local label
-
-		return s.FindKnot(path)
+		// global knot
+		if s.FindKnot(path) != nil {
+			return s.FindKnot(path)
+		}
 	case 2: // local stitch.label || knot.stitch
 		if knot != nil {
 			p := regReplaceDot.ReplaceAllString(path, split+"$1")
