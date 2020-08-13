@@ -47,7 +47,7 @@ func NewGather(s *Story, input string) error {
 			choices.gather = g
 			s.current = g
 
-			g.path = choices.Path() + ".g"
+			g.path = choices.Path() + split + "g"
 			s.objMap[g.path] = g
 
 			if err := g.parseLabel(); err != nil {
