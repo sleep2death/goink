@@ -195,3 +195,19 @@ func NewStory() *Story {
 
 	return story
 }
+
+// Parse lines of ink file into new story
+func Parse(input string) (*Story, error) {
+	contents := strings.Split(input, "\n")
+
+	s := NewStory()
+
+	for _, line := range contents {
+		if err := s.parseLine(line); err != nil {
+			return nil, err
+		}
+	}
+
+	s.Reset()
+	return s, nil
+}

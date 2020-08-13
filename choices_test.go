@@ -14,7 +14,7 @@ func TestInvalidOptionNesting(t *testing.T) {
 		**** Invalid Nesting Option_A.1.1
 	* This is Option_B
 	`
-	_, err := parse(input)
+	_, err := Parse(input)
 	assert.NotNil(t, err)
 }
 
@@ -31,7 +31,7 @@ func TestChoicesFunctions(t *testing.T) {
 
 	- Final Gather
 	`
-	s, err := parse(input)
+	s, err := Parse(input)
 	assert.Nil(t, err)
 
 	s.Next()
@@ -65,7 +65,7 @@ func TestChoicesSupressing(t *testing.T) {
 	== Knot_A
 	This is Knot A.
 	`
-	s, err := parse(input)
+	s, err := Parse(input)
 	assert.Nil(t, err)
 
 	if c, ok := s.Next().(*Choices); ok {
@@ -98,7 +98,7 @@ func TestStickyOption(t *testing.T) {
 	+ Opt_C
 	- Loop Gather -> Knot_A
 	`
-	s, err := parse(input)
+	s, err := Parse(input)
 	assert.Nil(t, err)
 
 	s.Next()
@@ -135,7 +135,7 @@ func TestConditionalOption(t *testing.T) {
 	* GHI { conditional_c } JKL
 	`
 
-	s, err := parse(input)
+	s, err := Parse(input)
 	assert.Nil(t, err)
 
 	s.Next()
@@ -157,7 +157,7 @@ func TestLabelledOption(t *testing.T) {
 	+ {conditional_b } (label_b) abc[DEF]def
 	* GHI { conditional_c } JKL
 	`
-	s, err := parse(input)
+	s, err := Parse(input)
 	assert.Nil(t, err)
 
 	s.Next()
@@ -181,7 +181,7 @@ func TestLablledOptionAndGather(t *testing.T) {
 	+ {Knot_A__lable_g > 0} (lable_b) abc[DEF]def
 	* GHI { conditional_c } JKL
 	`
-	s, err := parse(input)
+	s, err := Parse(input)
 	assert.Nil(t, err)
 
 	s.Next()
@@ -211,7 +211,7 @@ func TestDuplicatedLabel(t *testing.T) {
     * (lable_b) Option B
     + (lable_a)Option B
 	`
-	_, err := parse(input)
+	_, err := Parse(input)
 	assert.Equal(t, "duplicated label: lable_a", err.Error())
 
 	input = `
@@ -227,7 +227,7 @@ func TestDuplicatedLabel(t *testing.T) {
     * (lable_a) Option A
     * (lable_b) Option B
 	`
-	_, err = parse(input)
+	_, err = Parse(input)
 	assert.Nil(t, err)
 }
 
@@ -237,7 +237,7 @@ func TestChoicesParseError(t *testing.T) {
     * (lable_b) Option B
     + (lable_c) --> Option B
 	`
-	_, err := parse(input)
+	_, err := Parse(input)
 	assert.NotNil(t, err)
 }
 
@@ -247,7 +247,7 @@ func TestInvalidOptions(t *testing.T) {
     * (lable_b) Option B
     + (lable_c) -> Option B
 	`
-	s, err := parse(input)
+	s, err := Parse(input)
 	assert.Nil(t, err)
 
 	p := assert.PanicTestFunc(func() {

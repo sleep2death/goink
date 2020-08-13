@@ -17,7 +17,7 @@ func TestKnotParse(t *testing.T) {
 	=== Knot_B ===
 		This is Knot_B
 	`
-	s, err := parse(input)
+	s, err := Parse(input)
 
 	if err != nil {
 		t.Error(err)
@@ -39,7 +39,7 @@ func TestKnotNameConflict(t *testing.T) {
 	=== Knot_A ===
 		This is also Knot_A
 	`
-	_, err := parse(input)
+	_, err := Parse(input)
 	assert.NotNil(t, err)
 }
 
@@ -54,7 +54,7 @@ func TestStitchNameConflict(t *testing.T) {
 		= Stitch_A
 		This is also Stitch_A
 	`
-	_, err := parse(input)
+	_, err := Parse(input)
 	assert.NotNil(t, err)
 
 	input = `
@@ -62,7 +62,7 @@ func TestStitchNameConflict(t *testing.T) {
 	= Stitch_A
 	  This is Stitch_A
 	`
-	_, err = parse(input)
+	_, err = Parse(input)
 	assert.NotNil(t, err)
 }
 
@@ -81,7 +81,7 @@ func TestStitchParse(t *testing.T) {
 		** Option B
 		-- Gather
 	`
-	s, err := parse(input)
+	s, err := Parse(input)
 	assert.Nil(t, err)
 
 	assert.Nil(t, s.findDivert("Unknown", nil))
@@ -113,7 +113,7 @@ func TestFindDivert(t *testing.T) {
 		= Stitch_B
 		Finally...
 	`
-	s, err := parse(input)
+	s, err := Parse(input)
 	assert.Nil(t, err)
 
 	s.Next()
@@ -154,7 +154,7 @@ func TestConfictKnotAndStitchName(t *testing.T) {
 		= Stitch_A
 		Finally...
 	`
-	_, err := parse(input)
+	_, err := Parse(input)
 	assert.NotNil(t, err)
 	assert.Equal(t, "conflict stitch name: Stitch_A", err.Error())
 }

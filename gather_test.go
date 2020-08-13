@@ -15,7 +15,7 @@ func TestNewGather(t *testing.T) {
 	# Knot_A
 	A content here.
 	`
-	_, err := parse(input)
+	_, err := Parse(input)
 	assert.NotNil(t, err)
 }
 
@@ -28,7 +28,7 @@ func TestGatherLableParsing(t *testing.T) {
 	# Knot_A
 	A content here.
 	`
-	_, err := parse(input)
+	_, err := Parse(input)
 	assert.NotNil(t, err)
 
 	input = `
@@ -43,7 +43,7 @@ func TestGatherLableParsing(t *testing.T) {
 	  - (lable_g)-> Knot_A
 	`
 
-	s, err := parse(input)
+	s, err := Parse(input)
 	assert.Nil(t, err)
 
 	s.Next()

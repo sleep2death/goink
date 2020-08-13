@@ -2,7 +2,6 @@ package goink
 
 import (
 	"math/rand"
-	"strings"
 	"testing"
 	"time"
 
@@ -35,7 +34,7 @@ func TestChoicesNesting(t *testing.T) {
 		= stitch_a
 		   Final Content
 	`
-	s, err := parse(input)
+	s, err := Parse(input)
 
 	if err != nil {
 		t.Error(err)
@@ -84,7 +83,7 @@ func TestInkObjPath(t *testing.T) {
 		= Stitch_A
 		This is stitch_a content.
 	`
-	s, err := parse(input)
+	s, err := Parse(input)
 
 	if err != nil {
 		t.Error(err)
@@ -117,7 +116,7 @@ func TestStorySave(t *testing.T) {
 		= Stitch_A
 		This is stitch_a content.
 	`
-	s, err := parse(input)
+	s, err := Parse(input)
 
 	if err != nil {
 		t.Error(err)
@@ -145,7 +144,7 @@ func TestStorySave(t *testing.T) {
 	assert.Equal(t, 1, state.Count()["Knot_A__Stitch_A__c__0"])
 
 	// create a new story from the same source
-	ss, err := parse(input)
+	ss, err := Parse(input)
 	assert.Nil(t, err)
 	err = ss.Load(state)
 
@@ -161,19 +160,4 @@ func TestStorySave(t *testing.T) {
 	state.path = "invalid path"
 	err = ss.Load(state)
 	assert.NotNil(t, err)
-}
-
-func parse(input string) (*Story, error) {
-	contents := strings.Split(input, "\n")
-
-	s := NewStory()
-
-	for _, line := range contents {
-		if err := s.parseLine(line); err != nil {
-			return nil, err
-		}
-	}
-
-	s.Reset()
-	return s, nil
 }

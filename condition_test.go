@@ -72,7 +72,7 @@ func TestKnotVisitCount(t *testing.T) {
 		This is Knot_B
 		-> END
 	`
-	s, err := parse(input)
+	s, err := Parse(input)
 
 	if err != nil {
 		t.Error(err)
@@ -110,7 +110,7 @@ func TestLableVisitCount(t *testing.T) {
 		+ {Knot_A.gather == 0} Option B
 		- -> END
 	`
-	s, err := parse(input)
+	s, err := Parse(input)
 
 	if err != nil {
 		t.Error(err)
@@ -152,6 +152,6 @@ func TestLableVisitCount(t *testing.T) {
 		+ {Knot_A.gather == 0} Option B
 		- -> END
 	`
-	_, err = parse(input)
+	_, err = Parse(input)
 	assert.NotNil(t, err)
 }

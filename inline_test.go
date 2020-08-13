@@ -52,7 +52,7 @@ func TestDivert(t *testing.T) {
 		* Option C
 		- Final Gather B
 	`
-	s, err := parse(input)
+	s, err := Parse(input)
 
 	if err != nil {
 		t.Error(err)
@@ -92,7 +92,7 @@ func TestGlueParse(t *testing.T) {
 	<>Glue Test 4<>
 	`
 
-	s, err := parse(input)
+	s, err := Parse(input)
 
 	if err != nil {
 		t.Error(err)
@@ -130,7 +130,7 @@ func TestDivertNavigation(t *testing.T) {
 	- (lable_g) gather c-> lable_o
 	`
 
-	s, err := parse(input)
+	s, err := Parse(input)
 
 	if err != nil {
 		t.Error(err)
