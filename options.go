@@ -22,7 +22,7 @@ func NewOption(s *Story, input string) error {
 			return err
 		}
 
-		o := &Option{Inline: i}
+		o := &Option{line: i}
 		o.story = s
 
 		// once-only option
@@ -167,7 +167,7 @@ func (c *Choices) choose(idx int) *Option {
 
 // Option node of the choices
 type Option struct {
-	*Inline
+	*line
 
 	sticky    bool
 	condition *Condition

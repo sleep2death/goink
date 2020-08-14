@@ -35,7 +35,7 @@ func TestChoicesFunctions(t *testing.T) {
 	assert.Nil(t, err)
 
 	s.Next()
-	assert.Equal(t, "Hello, World", s.Current().(*Inline).render())
+	assert.Equal(t, "Hello, World", s.Current().(*line).render())
 
 	s.Next()
 	assert.Panics(t, assert.PanicTestFunc(func() { s.Current().(*Choices).SetNext(nil) }))

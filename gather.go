@@ -9,7 +9,7 @@ import (
 
 // Gather node of the choices
 type Gather struct {
-	*Inline
+	*line
 	nesting int
 }
 
@@ -25,7 +25,7 @@ func NewGather(s *Story, input string) error {
 			return err
 		}
 
-		g := &Gather{Inline: i, nesting: nesting}
+		g := &Gather{line: i, nesting: nesting}
 		g.story = s
 
 		obj := s.current

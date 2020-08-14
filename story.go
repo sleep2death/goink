@@ -200,7 +200,7 @@ func NewStory() *Story {
 	// Inline always be the last parser
 	parsers = append(parsers, NewKnot, NewStitch, NewOption, NewGather, NewInline)
 
-	start := &Inline{raw: "[start]", path: "r"}
+	start := &line{raw: "[start]", path: "r"}
 
 	story := &Story{start: start}
 	story.current = story.start

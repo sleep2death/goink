@@ -51,9 +51,9 @@ func NewInline(s *Story, input string) error {
 }
 
 // createNewInline from the input
-func createNewInline(input string) (*Inline, error) {
+func createNewInline(input string) (*line, error) {
 	// Inline
-	i := &Inline{raw: input}
+	i := &line{raw: input}
 
 	// illegal gather sign
 	if res := illegalGatherReg.FindStringSubmatch(input); res != nil {
@@ -102,8 +102,8 @@ func createNewInline(input string) (*Inline, error) {
 	return i, nil
 }
 
-// Inline node of tye story
-type Inline struct {
+// line node of the story
+type line struct {
 	story  *Story
 	parent InkObj
 	next   InkObj
@@ -122,44 +122,44 @@ type Inline struct {
 }
 
 // render the inline's content into string
-func (i *Inline) render() string {
-	return i.text
+func (l *line) render() string {
+	return l.text
 }
 
-// Parent of the inline
-func (i *Inline) Parent() InkObj {
-	return i.parent
+// Parent of the line
+func (l *line) Parent() InkObj {
+	return l.parent
 }
 
 // Path of the inline
-func (i *Inline) Path() string {
-	return i.path
+func (l *line) Path() string {
+	return l.path
 }
 
 // SetNext content of the inline
-func (i *Inline) SetNext(obj InkObj) {
-	i.next = obj
+func (l *line) SetNext(obj InkObj) {
+	l.next = obj
 }
 
 // Next content of the inline
-func (i *Inline) Next() InkObj {
+func (l *line) Next() InkObj {
 	// divert
-	if i.divert != "" {
+	if l.divert != "" {
 		// return i.story.FindDivert(i.divert).Next()
-		if target := i.story.findDivert(i.divert, i); target != nil {
+		if target := l.story.findDivert(l.divert, l); target != nil {
 			return target
 		}
 
-		panic(errors.Errorf("can not find the divert: %s", i.divert))
+		panic(errors.Errorf("can not find the divert: %s", l.divert))
 	}
 
 	// fallback to next
-	if i.next != nil {
-		return i.next
+	if l.next != nil {
+		return l.next
 	}
 
 	// fallback to gather
-	obj := i.parent
+	obj := l.parent
 	for obj != nil {
 		if c, ok := obj.(*Choices); ok {
 			if c.gather != nil {
@@ -174,6 +174,6 @@ func (i *Inline) Next() InkObj {
 }
 
 // Story of the inline
-func (i *Inline) Story() *Story {
-	return i.story
+func (l *line) Story() *Story {
+	return l.story
 }

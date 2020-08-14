@@ -46,8 +46,8 @@ func TestChoicesNesting(t *testing.T) {
 	for s.Next() != nil {
 		// t.Log(s.current.Path())
 		switch s.current.(type) {
-		case *Inline:
-			t.Log(s.current.(*Inline).render())
+		case *line:
+			t.Log(s.current.(*line).render())
 		case *Option:
 			t.Log(s.current.(*Option).Render(false))
 		case *Gather:
@@ -64,7 +64,7 @@ func TestChoicesNesting(t *testing.T) {
 		}
 	}
 
-	assert.Equal(t, "Final Content", s.current.(*Inline).render())
+	assert.Equal(t, "Final Content", s.current.(*line).render())
 	assert.Equal(t, "Knot_A__stitch_a__i", s.current.Path())
 	assert.Equal(t, s.objMap["Knot_A__stitch_a__i"], s.current)
 }

@@ -16,15 +16,15 @@ func TestInlineParse(t *testing.T) {
 
 	err = NewInline(s, "-> Divert")
 	assert.Nil(t, err)
-	assert.Equal(t, "Divert", s.current.(*Inline).divert)
+	assert.Equal(t, "Divert", s.current.(*line).divert)
 
 	err = NewInline(s, "This is a content. -> Divert #Tag A # TagB // Comment")
 	assert.Nil(t, err)
-	assert.Equal(t, "Divert", s.current.(*Inline).divert)
-	assert.Equal(t, "TagB", s.current.(*Inline).tags[1])
-	assert.Equal(t, "Tag A", s.current.(*Inline).tags[0])
-	assert.Equal(t, s, s.current.(*Inline).Story())
-	assert.True(t, len(s.current.(*Inline).comment) > 0)
+	assert.Equal(t, "Divert", s.current.(*line).divert)
+	assert.Equal(t, "TagB", s.current.(*line).tags[1])
+	assert.Equal(t, "Tag A", s.current.(*line).tags[0])
+	assert.Equal(t, s, s.current.(*line).Story())
+	assert.True(t, len(s.current.(*line).comment) > 0)
 }
 
 func TestDivert(t *testing.T) {
@@ -63,8 +63,8 @@ func TestDivert(t *testing.T) {
 
 	for s.Next() != nil {
 		switch s.current.(type) {
-		case *Inline:
-			t.Log(s.current.(*Inline).render())
+		case *line:
+			t.Log(s.current.(*line).render())
 		case *Option:
 			t.Log(s.current.(*Option).Render(true))
 		case *Gather:
@@ -102,16 +102,16 @@ func TestGlueParse(t *testing.T) {
 	s.Next()
 	s.Next()
 
-	assert.True(t, s.Current().(*Inline).glueStart)
-	assert.False(t, s.Current().(*Inline).glueEnd)
+	assert.True(t, s.Current().(*line).glueStart)
+	assert.False(t, s.Current().(*line).glueEnd)
 
 	s.Next()
-	assert.True(t, s.Current().(*Inline).glueEnd)
-	assert.False(t, s.Current().(*Inline).glueStart)
+	assert.True(t, s.Current().(*line).glueEnd)
+	assert.False(t, s.Current().(*line).glueStart)
 
 	s.Next()
-	assert.True(t, s.Current().(*Inline).glueEnd)
-	assert.True(t, s.Current().(*Inline).glueStart)
+	assert.True(t, s.Current().(*line).glueEnd)
+	assert.True(t, s.Current().(*line).glueStart)
 }
 
 func TestDivertNavigation(t *testing.T) {
