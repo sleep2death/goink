@@ -110,8 +110,8 @@ type line struct {
 	text string
 }
 
-// Render the inline's content into string
-func (l *line) Render() string {
+// render the inline's content into string
+func (l *line) render() string {
 	return l.text
 }
 

@@ -64,11 +64,11 @@ func TestDivert(t *testing.T) {
 	for s.next() != nil {
 		switch s.c.(type) {
 		case *line:
-			t.Log(s.c.(*line).Render())
+			t.Log(s.c.(*line).render())
 		case *opt:
 			t.Log(s.c.(*opt).render(true))
 		case *gather:
-			t.Log(s.c.(*gather).Render())
+			t.Log(s.c.(*gather).render())
 		case *options:
 			for _, o := range s.c.(*options).list() {
 				t.Log("*", o.render(true))
@@ -139,14 +139,14 @@ func TestDivertNavigation(t *testing.T) {
 
 	s.next()
 	s.next()
-	assert.Equal(t, " gather ", s.current().(*gather).Render())
+	assert.Equal(t, " gather ", s.current().(*gather).render())
 
 	s.next()
 	assert.Equal(t, "stitch_b", s.current().(*Stitch).name)
 
 	s.next()
 	s.next()
-	assert.Equal(t, " gather c", s.current().(*gather).Render())
+	assert.Equal(t, " gather c", s.current().(*gather).render())
 
 	s.next()
 	assert.Equal(t, " opt a ", s.current().(*opt).render(false))

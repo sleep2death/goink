@@ -47,11 +47,11 @@ func TestChoicesNesting(t *testing.T) {
 		// t.Log(s.current.Path())
 		switch s.c.(type) {
 		case *line:
-			t.Log(s.c.(*line).Render())
+			t.Log(s.c.(*line).render())
 		case *opt:
 			t.Log(s.c.(*opt).render(false))
 		case *gather:
-			t.Log(s.c.(*gather).Render())
+			t.Log(s.c.(*gather).render())
 		case *options:
 			for _, o := range s.c.(*options).list() {
 				t.Log("*", o.render(true))
@@ -64,7 +64,7 @@ func TestChoicesNesting(t *testing.T) {
 		}
 	}
 
-	assert.Equal(t, "Final Content", s.c.(*line).Render())
+	assert.Equal(t, "Final Content", s.c.(*line).render())
 	assert.Equal(t, "Knot_A__stitch_a__i", s.c.Path())
 	assert.Equal(t, s.paths["Knot_A__stitch_a__i"], s.c)
 }

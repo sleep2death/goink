@@ -2,6 +2,7 @@ package goink
 
 import (
 	"strings"
+	"sync"
 
 	"github.com/pkg/errors"
 )
@@ -14,6 +15,8 @@ type Story struct {
 
 	paths map[string]InkObj
 	vars  map[string]int
+
+	mux sync.Mutex
 }
 
 // InkObj is the basic element of a story
@@ -65,6 +68,35 @@ func (s *Story) choose(idx int) *opt {
 // Save current state of the story
 func (s *Story) Save() *State {
 	return NewState(s)
+}
+
+// Continue the story with the given vars
+func (s *Story) Continue(state *State) (sec *Section, err error) {
+	defer s.mux.Unlock()
+	s.mux.Lock()
+
+	sec = &Section{}
+
+	for s.next() != nil {
+		// t.Log(s.current.Path())
+		switch s.c.(type) {
+		case *line:
+			sec.text += s.c.(*line).render()
+			sec.tags = append(sec.tags, s.c.(*line).tags...)
+			//t.Log(s.c.(*line).Render())
+		case *opt:
+			sec.text += s.c.(*opt).render(false)
+			sec.tags = append(sec.tags, s.c.(*line).tags...)
+			// t.Log(s.c.(*opt).render(false))
+		case *gather:
+			// t.Log(s.c.(*gather).Render())
+		case *options:
+			// t.Log("*", o.render(true))
+		default: //knot or stitch - do nothing
+		}
+	}
+
+	return
 }
 
 // Load previous state into story
