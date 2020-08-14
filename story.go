@@ -16,6 +16,17 @@ type Story struct {
 	objCount map[string]int
 }
 
+// InkObj is the basic element of the story
+type InkObj interface {
+	Story() *Story
+	Parent() InkObj
+
+	Next() InkObj
+	SetNext(obj InkObj)
+
+	Path() string
+}
+
 // Current content of the story
 func (s *Story) Current() InkObj {
 	return s.current

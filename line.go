@@ -7,17 +7,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// InkObj is the basic element of the story
-type InkObj interface {
-	Story() *Story
-	Parent() InkObj
-
-	Next() InkObj
-	SetNext(obj InkObj)
-
-	Path() string
-}
-
 var (
 	commentReg = regexp.MustCompile(`(^.*)(\/\/)(.+)$`)
 	tagReg     = regexp.MustCompile(`(^.*)(\#)(.+)$`)
