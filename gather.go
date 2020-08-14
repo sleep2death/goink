@@ -29,9 +29,9 @@ func readGather(s *Story, input string) error {
 		g.story = s
 
 		obj := s.current
-		var choices *Choices
+		var choices *options
 		for obj != nil {
-			if c, ok := obj.(*Choices); ok {
+			if c, ok := obj.(*options); ok {
 				if t := nesting - c.nesting; t == 0 {
 					choices = c
 					break

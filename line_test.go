@@ -64,18 +64,18 @@ func TestDivert(t *testing.T) {
 	for s.Next() != nil {
 		switch s.current.(type) {
 		case *line:
-			t.Log(s.current.(*line).render())
-		case *Option:
-			t.Log(s.current.(*Option).Render(true))
+			t.Log(s.current.(*line).Render())
+		case *Opt:
+			t.Log(s.current.(*Opt).render(true))
 		case *gather:
-			t.Log(s.current.(*gather).render())
-		case *Choices:
-			for _, o := range s.current.(*Choices).options() {
-				t.Log("*", o.Render(true))
+			t.Log(s.current.(*gather).Render())
+		case *options:
+			for _, o := range s.current.(*options).list() {
+				t.Log("*", o.render(true))
 			}
 
 			// random select
-			idx := rand.Intn(len(s.current.(*Choices).options()))
+			idx := rand.Intn(len(s.current.(*options).list()))
 			s.Select(idx)
 			t.Logf("Select [%d]", idx)
 		}
@@ -139,17 +139,17 @@ func TestDivertNavigation(t *testing.T) {
 
 	s.Next()
 	s.Next()
-	assert.Equal(t, " gather ", s.Current().(*gather).render())
+	assert.Equal(t, " gather ", s.Current().(*gather).Render())
 
 	s.Next()
 	assert.Equal(t, "stitch_b", s.Current().(*Stitch).name)
 
 	s.Next()
 	s.Next()
-	assert.Equal(t, " gather c", s.Current().(*gather).render())
+	assert.Equal(t, " gather c", s.Current().(*gather).Render())
 
 	s.Next()
-	assert.Equal(t, " opt a ", s.Current().(*Option).Render(false))
+	assert.Equal(t, " opt a ", s.Current().(*Opt).render(false))
 
 	pf := assert.PanicTestFunc(func() {
 		s.Next()

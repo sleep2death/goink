@@ -9,14 +9,14 @@ import (
 var knotReg = regexp.MustCompile(`(^\={2,})(\s+)(\w+)`)
 var stitchReg = regexp.MustCompile(`(^\=)(\s+)(\w+)`)
 
-// NewKnot parse and insert a new knot into story
-func NewKnot(s *Story, input string) error {
+// readKnot parse and insert a new knot into story
+func readKnot(s *Story, input string) error {
 	// == knot
 	result := knotReg.FindStringSubmatch(input)
 	if result != nil {
 		name := result[3]
 
-		k := &Knot{story: s, name: name}
+		k := &knot{story: s, name: name}
 		s.knots = append(s.knots, k)
 		s.current = k
 
@@ -33,8 +33,8 @@ func NewKnot(s *Story, input string) error {
 	return ErrNotMatch
 }
 
-// NewStitch parse and insert a new knot into story
-func NewStitch(s *Story, input string) error {
+// readStitch parse and insert a new knot into story
+func readStitch(s *Story, input string) error {
 	// = stitch
 	result := stitchReg.FindStringSubmatch(input)
 	if result != nil {
@@ -49,7 +49,7 @@ func NewStitch(s *Story, input string) error {
 			return errors.Errorf("conflict stitch name: %s", name)
 		}
 
-		stitch := &Stitch{story: s, name: name, knot: k}
+		stitch := &Stitch{story: s, name: name, k: k}
 		k.stitches = append(k.stitches, stitch)
 		s.current = stitch
 
@@ -67,8 +67,8 @@ func NewStitch(s *Story, input string) error {
 	return ErrNotMatch
 }
 
-// Knot is a container of story's content
-type Knot struct {
+// knot is a container of story's content
+type knot struct {
 	story *Story
 	name  string
 
@@ -78,39 +78,39 @@ type Knot struct {
 }
 
 // Path of the knot
-func (k *Knot) Path() string {
+func (k *knot) Path() string {
 	return k.path
 }
 
 // Name of the knot
-func (k *Knot) Name() string {
+func (k *knot) Name() string {
 	return k.name
 }
 
 // Story of the knot
-func (k *Knot) Story() *Story {
+func (k *knot) Story() *Story {
 	return k.story
 }
 
 // Parent of the knot should always be nil
-func (k *Knot) Parent() InkObj {
+func (k *knot) Parent() InkObj {
 	return nil
 }
 
 // SetNext of the knot
-func (k *Knot) SetNext(obj InkObj) {
+func (k *knot) SetNext(obj InkObj) {
 	k.next = obj
 }
 
 // Next of the knot
-func (k *Knot) Next() InkObj {
+func (k *knot) Next() InkObj {
 	return k.next
 }
 
 // Stitch is a sub container of a knot
 type Stitch struct {
 	story *Story
-	knot  *Knot
+	k     *knot
 	name  string
 
 	path string
@@ -148,7 +148,7 @@ func (s *Stitch) Next() InkObj {
 }
 
 // findStitch of the knot by name
-func (k *Knot) findStitch(name string) *Stitch {
+func (k *knot) findStitch(name string) *Stitch {
 	if s, ok := k.story.objMap[k.name+SPLIT+name]; ok {
 		if stitch, b := s.(*Stitch); b {
 			return stitch

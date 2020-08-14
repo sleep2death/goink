@@ -25,7 +25,7 @@ func TestKnotParse(t *testing.T) {
 	}
 
 	k := s.findKnot("Knot_B")
-	assert.Equal(t, "This is Knot_B", k.Next().(*line).render())
+	assert.Equal(t, "This is Knot_B", k.Next().(*line).Render())
 }
 
 func TestKnotNameConflict(t *testing.T) {
@@ -88,15 +88,15 @@ func TestStitchParse(t *testing.T) {
 	assert.Nil(t, s.findDivert("Unknown.Unknown", nil))
 	assert.Nil(t, s.findDivert("Unknown.Unknown.Unknown", nil))
 
-	assert.Equal(t, "Knot_A", s.findDivert("Knot_A", nil).(*Knot).Name())
-	assert.Equal(t, s, s.findDivert("Knot_A", nil).(*Knot).Story())
+	assert.Equal(t, "Knot_A", s.findDivert("Knot_A", nil).(*knot).Name())
+	assert.Equal(t, s, s.findDivert("Knot_A", nil).(*knot).Story())
 
 	assert.Equal(t, "Stitch_A", s.findDivert("Knot_A.Stitch_A", nil).(*Stitch).Name())
 	assert.Equal(t, "Stitch_B", s.findDivert("Knot_B.Stitch_B", nil).(*Stitch).Name())
 
 	stitch := s.findDivert("Knot_A.Stitch_A", nil).(*Stitch)
 	assert.Equal(t, s, stitch.Story())
-	assert.Equal(t, "Stitch_A Content", stitch.Next().(*line).render())
+	assert.Equal(t, "Stitch_A Content", stitch.Next().(*line).Render())
 }
 
 func TestFindDivert(t *testing.T) {
@@ -118,7 +118,7 @@ func TestFindDivert(t *testing.T) {
 
 	s.Next()
 
-	assert.Equal(t, "Knot_A", s.findDivert("Knot_A", s.Current()).(*Knot).Name())
+	assert.Equal(t, "Knot_A", s.findDivert("Knot_A", s.Current()).(*knot).Name())
 	assert.Equal(t, 0, s.findDivertCount("Knot_A", nil))
 
 	s.Next()
@@ -128,7 +128,7 @@ func TestFindDivert(t *testing.T) {
 	s.Next()
 	s.Next()
 
-	assert.Equal(t, "Stitch_A Content", s.Current().(*line).render())
+	assert.Equal(t, "Stitch_A Content", s.Current().(*line).Render())
 	assert.Equal(t, "Stitch_A", s.findDivert("Stitch_A", s.Current()).(*Stitch).Name())
 
 	s.Next()

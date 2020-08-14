@@ -121,8 +121,8 @@ type line struct {
 	text string
 }
 
-// render the inline's content into string
-func (l *line) render() string {
+// Render the inline's content into string
+func (l *line) Render() string {
 	return l.text
 }
 
@@ -161,7 +161,7 @@ func (l *line) Next() InkObj {
 	// fallback to gather
 	obj := l.parent
 	for obj != nil {
-		if c, ok := obj.(*Choices); ok {
+		if c, ok := obj.(*options); ok {
 			if c.gather != nil {
 				return c.gather
 			}

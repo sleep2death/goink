@@ -7,25 +7,25 @@ import (
 )
 
 func TestNewExprc(t *testing.T) {
-	condA, err := NewExprc("not (Knot_A > 0)")
+	condA, err := newExprc("not (Knot_A > 0)")
 	assert.Nil(t, err)
 
-	condB, err := NewExprc("Knot_B == 0")
+	condB, err := newExprc("Knot_B == 0")
 	assert.Nil(t, err)
 
-	condC, err := NewExprc("abc +  def")
+	condC, err := newExprc("abc +  def")
 	assert.Nil(t, err)
 
-	condD, err := NewExprc("(Knot_A > 0) and (Knot_B == 0)")
+	condD, err := newExprc("(Knot_A > 0) and (Knot_B == 0)")
 	assert.Nil(t, err)
 
-	condE, err := NewExprc("intA + intB")
+	condE, err := newExprc("intA + intB")
 	assert.Nil(t, err)
 
-	condF, err := NewExprc("'intA' + 'intB'")
+	condF, err := newExprc("'intA' + 'intB'")
 	assert.Nil(t, err)
 
-	_, err = NewExprc("(Knot_A > 0 and (Knot_B == 0)")
+	_, err = newExprc("(Knot_A > 0 and (Knot_B == 0)")
 	assert.NotNil(t, err)
 
 	env := make(map[string]int)
@@ -83,13 +83,13 @@ func TestKnotVisitCount(t *testing.T) {
 	s.Next()
 	s.Next()
 
-	c, ok := s.Current().(*Choices)
+	c, ok := s.Current().(*options)
 	assert.True(t, ok)
 
 	// only one option will be displayed
-	assert.Equal(t, 1, len(c.options()))
+	assert.Equal(t, 1, len(c.list()))
 
-	condition0 := c.options()[0].condition
+	condition0 := c.list()[0].condition
 	assert.Equal(t, "Knot_A > 0", condition0.program.Source.Content())
 
 	b, err := condition0.Bool(s.objCount)
@@ -121,9 +121,9 @@ func TestLableVisitCount(t *testing.T) {
 	s.Next()
 	s.Next()
 
-	c, ok := s.Current().(*Choices)
+	c, ok := s.Current().(*options)
 	assert.True(t, ok)
-	assert.Equal(t, 1, len(c.options()))
+	assert.Equal(t, 1, len(c.list()))
 
 	s.Select(0)
 
@@ -131,14 +131,14 @@ func TestLableVisitCount(t *testing.T) {
 	s.Next()
 	s.Next()
 
-	c, ok = s.Current().(*Choices)
+	c, ok = s.Current().(*options)
 	assert.True(t, ok)
 
 	// t.Log(s.objCount["Knot_A-gather"])
-	t.Log(c.options()[0].condition.program.Source.Content())
-	// t.Log(c.Options()[0].condition.Bool(s.objCount))
-	assert.Equal(t, 1, len(c.options()))
-	assert.Equal(t, " Option A", c.options()[0].Render(false))
+	t.Log(c.list()[0].condition.program.Source.Content())
+	// t.Log(c.options()[0].condition.Bool(s.objCount))
+	assert.Equal(t, 1, len(c.list()))
+	assert.Equal(t, " Option A", c.list()[0].render(false))
 
 	input = `
 	-> Knot_A

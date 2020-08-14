@@ -47,24 +47,24 @@ func TestChoicesNesting(t *testing.T) {
 		// t.Log(s.current.Path())
 		switch s.current.(type) {
 		case *line:
-			t.Log(s.current.(*line).render())
-		case *Option:
-			t.Log(s.current.(*Option).Render(false))
+			t.Log(s.current.(*line).Render())
+		case *Opt:
+			t.Log(s.current.(*Opt).render(false))
 		case *gather:
-			t.Log(s.current.(*gather).render())
-		case *Choices:
-			for _, o := range s.current.(*Choices).options() {
-				t.Log("*", o.Render(true))
+			t.Log(s.current.(*gather).Render())
+		case *options:
+			for _, o := range s.current.(*options).list() {
+				t.Log("*", o.render(true))
 			}
 
 			// random select
-			idx := rand.Intn(len(s.current.(*Choices).options()))
+			idx := rand.Intn(len(s.current.(*options).list()))
 			s.Select(idx)
-			t.Logf("Select [%d]: %s", idx, s.current.(*Option).Render(false))
+			t.Logf("Select [%d]: %s", idx, s.current.(*Opt).render(false))
 		}
 	}
 
-	assert.Equal(t, "Final Content", s.current.(*line).render())
+	assert.Equal(t, "Final Content", s.current.(*line).Render())
 	assert.Equal(t, "Knot_A__stitch_a__i", s.current.Path())
 	assert.Equal(t, s.objMap["Knot_A__stitch_a__i"], s.current)
 }

@@ -8,11 +8,11 @@ import (
 	"github.com/pkg/errors"
 )
 
-var choicesReg = regexp.MustCompile(`(^(\+\s*)+|^(\*\s*)+)(.+)`)
+var optsReg = regexp.MustCompile(`(^(\+\s*)+|^(\*\s*)+)(.+)`)
 
-// NewOption parse and insert a new option into story
-func NewOption(s *Story, input string) error {
-	res := choicesReg.FindStringSubmatch(input)
+// readOption parse and insert a new option into story
+func readOption(s *Story, input string) error {
+	res := optsReg.FindStringSubmatch(input)
 
 	if res != nil {
 		nesting := len(strings.Join(strings.Fields(res[1]), ""))
@@ -22,7 +22,7 @@ func NewOption(s *Story, input string) error {
 			return err
 		}
 
-		o := &Option{line: i}
+		o := &Opt{line: i}
 		o.story = s
 
 		// once-only option
@@ -34,7 +34,7 @@ func NewOption(s *Story, input string) error {
 
 		obj := s.current
 
-		var choices *Choices
+		var choices *options
 		// var gather *Gather
 
 		for obj != nil {
@@ -44,7 +44,7 @@ func NewOption(s *Story, input string) error {
 				}
 			}
 
-			if c, ok := obj.(*Choices); ok {
+			if c, ok := obj.(*options); ok {
 				if t := nesting - c.nesting; t >= 0 {
 					if t > 1 {
 						return errors.Errorf("wrong nesting of the option: %s", input)
@@ -59,7 +59,7 @@ func NewOption(s *Story, input string) error {
 		}
 
 		if choices == nil {
-			choices = &Choices{story: s, parent: s.current, nesting: nesting}
+			choices = &options{story: s, parent: s.current, nesting: nesting}
 
 			choices.path = s.current.Path() + SPLIT + "c"
 			s.objMap[choices.path] = choices
@@ -76,7 +76,7 @@ func NewOption(s *Story, input string) error {
 		s.current = o
 
 		// post parsing process
-		if err := o.parseCondition(); err != nil {
+		if err := o.parseExprc(); err != nil {
 			return err
 		}
 		if err := o.parseLabel(); err != nil {
@@ -88,11 +88,11 @@ func NewOption(s *Story, input string) error {
 	return ErrNotMatch
 }
 
-// Choices of the story
-type Choices struct {
+// options of the story
+type options struct {
 	story  *Story
 	parent InkObj
-	opts   []*Option
+	opts   []*Opt
 	path   string
 
 	gather  *gather
@@ -100,33 +100,33 @@ type Choices struct {
 }
 
 // Story of the choices
-func (c *Choices) Story() *Story {
+func (c *options) Story() *Story {
 	return c.story
 }
 
 // Path of the choices
-func (c *Choices) Path() string {
+func (c *options) Path() string {
 	return c.path
 }
 
 // Parent of the choices
-func (c *Choices) Parent() InkObj {
+func (c *options) Parent() InkObj {
 	return c.parent
 }
 
 // SetNext of the choices should fire panic
-func (c *Choices) SetNext(obj InkObj) {
+func (c *options) SetNext(obj InkObj) {
 	panic(errors.Errorf("choices can not set next: %v", obj))
 }
 
 // Next content of the choices should be nil
-func (c *Choices) Next() InkObj {
+func (c *options) Next() InkObj {
 	// panic(errors.New("choices can not go next"))
 	return nil
 }
 
 // options of the choices
-func (c *Choices) options() (os []*Option) {
+func (c *options) list() (os []*Opt) {
 	for _, opt := range c.opts {
 		// condition test
 		if opt.condition != nil {
@@ -153,9 +153,9 @@ func (c *Choices) options() (os []*Option) {
 }
 
 // choose the option of the choices by index
-func (c *Choices) choose(idx int) *Option {
+func (c *options) choose(idx int) *Opt {
 	// filtered options
-	opts := c.options()
+	opts := c.list()
 
 	if idx >= len(opts) || idx < 0 {
 		return nil
@@ -165,8 +165,8 @@ func (c *Choices) choose(idx int) *Option {
 	return opt
 }
 
-// Option node of the choices
-type Option struct {
+// Opt of the options
+type Opt struct {
 	*line
 
 	sticky    bool
@@ -178,8 +178,8 @@ var (
 	supressingReg = regexp.MustCompile(`(^.*)\[(.*)\](.*$)`)
 )
 
-// Render option text with supressing
-func (o *Option) Render(supressing bool) string {
+// render option text with supressing
+func (o *Opt) render(supressing bool) string {
 	res := supressingReg.FindStringSubmatch(o.text)
 	if res != nil {
 		before := res[1]
@@ -194,9 +194,9 @@ func (o *Option) Render(supressing bool) string {
 	return o.text
 }
 
-func (o *Option) parseCondition() error {
+func (o *Opt) parseExprc() error {
 	if res := exprReg.FindStringSubmatch(o.text); res != nil {
-		if c, err := NewExprc(strings.TrimSpace(res[1])); err == nil {
+		if c, err := newExprc(strings.TrimSpace(res[1])); err == nil {
 			o.condition = c
 			o.text = res[2]
 		} else {
@@ -207,7 +207,7 @@ func (o *Option) parseCondition() error {
 	return nil
 }
 
-func (o *Option) parseLabel() error {
+func (o *Opt) parseLabel() error {
 	if res := lableReg.FindStringSubmatch(o.text); res != nil {
 		label := strings.TrimSpace(res[1])
 		if len(label) > 0 {

@@ -17,8 +17,8 @@ type exprc struct {
 	raw     string
 }
 
-// NewExprc creates a condition with the given expr
-func NewExprc(code string) (*exprc, error) {
+// newExprc creates a condition with the given expr
+func newExprc(code string) (*exprc, error) {
 	cond := &exprc{raw: code}
 	c := regReplaceDot.ReplaceAllString(code, SPLIT+"$1")
 
