@@ -79,11 +79,11 @@ func TestKnotVisitCount(t *testing.T) {
 		return
 	}
 
-	s.Next()
-	s.Next()
-	s.Next()
+	s.next()
+	s.next()
+	s.next()
 
-	c, ok := s.Current().(*options)
+	c, ok := s.current().(*options)
 	assert.True(t, ok)
 
 	// only one option will be displayed
@@ -92,7 +92,7 @@ func TestKnotVisitCount(t *testing.T) {
 	condition0 := c.list()[0].condition
 	assert.Equal(t, "Knot_A > 0", condition0.program.Source.Content())
 
-	b, err := condition0.Bool(s.objCount)
+	b, err := condition0.Bool(s.vars)
 	assert.Nil(t, err)
 	assert.True(t, b)
 }
@@ -117,21 +117,21 @@ func TestLableVisitCount(t *testing.T) {
 		return
 	}
 
-	s.Next()
-	s.Next()
-	s.Next()
+	s.next()
+	s.next()
+	s.next()
 
-	c, ok := s.Current().(*options)
+	c, ok := s.current().(*options)
 	assert.True(t, ok)
 	assert.Equal(t, 1, len(c.list()))
 
-	s.Select(0)
+	s.choose(0)
 
-	s.Next()
-	s.Next()
-	s.Next()
+	s.next()
+	s.next()
+	s.next()
 
-	c, ok = s.Current().(*options)
+	c, ok = s.current().(*options)
 	assert.True(t, ok)
 
 	// t.Log(s.objCount["Knot_A-gather"])

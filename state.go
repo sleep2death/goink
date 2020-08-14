@@ -2,11 +2,11 @@ package goink
 
 // NewState of the current story
 func NewState(story *Story) *State {
-	path := story.current.Path()
+	path := story.c.Path()
 	count := make(map[string]int)
 
 	// copy all non-zero count into state's count
-	for k, v := range story.objCount {
+	for k, v := range story.vars {
 		if v > 0 {
 			count[k] = v
 		}

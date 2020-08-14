@@ -18,14 +18,14 @@ func readKnot(s *Story, input string) error {
 
 		k := &knot{story: s, name: name}
 		s.knots = append(s.knots, k)
-		s.current = k
+		s.c = k
 
 		k.path = name
 
-		if s.objMap[k.path] != nil {
+		if s.paths[k.path] != nil {
 			return errors.Errorf("conflict knot name: %s", name)
 		}
-		s.objMap[k.path] = k
+		s.paths[k.path] = k
 
 		return nil
 	}
@@ -40,7 +40,7 @@ func readStitch(s *Story, input string) error {
 	if result != nil {
 		name := result[3]
 
-		k, _ := s.findContainer(s.current)
+		k, _ := s.findContainer(s.c)
 		if k == nil {
 			return errors.Errorf("can not find the knot of the stitch: %s", input)
 		}
@@ -51,7 +51,7 @@ func readStitch(s *Story, input string) error {
 
 		stitch := &Stitch{story: s, name: name, k: k}
 		k.stitches = append(k.stitches, stitch)
-		s.current = stitch
+		s.c = stitch
 
 		stitch.path = k.Path() + SPLIT + name
 
@@ -59,7 +59,7 @@ func readStitch(s *Story, input string) error {
 		/* if s.objMap[stitch.path] != nil {
 			return errors.Errorf("conflict stitch name: %s", name)
 		} */
-		s.objMap[stitch.path] = stitch
+		s.paths[stitch.path] = stitch
 
 		return nil
 	}
@@ -149,7 +149,7 @@ func (s *Stitch) Next() InkObj {
 
 // findStitch of the knot by name
 func (k *knot) findStitch(name string) *Stitch {
-	if s, ok := k.story.objMap[k.name+SPLIT+name]; ok {
+	if s, ok := k.story.paths[k.name+SPLIT+name]; ok {
 		if stitch, b := s.(*Stitch); b {
 			return stitch
 		}

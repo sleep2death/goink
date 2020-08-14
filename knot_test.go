@@ -116,28 +116,28 @@ func TestFindDivert(t *testing.T) {
 	s, err := Parse(input)
 	assert.Nil(t, err)
 
-	s.Next()
+	s.next()
 
-	assert.Equal(t, "Knot_A", s.findDivert("Knot_A", s.Current()).(*knot).Name())
+	assert.Equal(t, "Knot_A", s.findDivert("Knot_A", s.current()).(*knot).Name())
 	assert.Equal(t, 0, s.findDivertCount("Knot_A", nil))
 
-	s.Next()
+	s.next()
 	assert.Equal(t, 1, s.findDivertCount("Knot_A", nil))
 
-	s.Next()
-	s.Next()
-	s.Next()
+	s.next()
+	s.next()
+	s.next()
 
-	assert.Equal(t, "Stitch_A Content", s.Current().(*line).Render())
-	assert.Equal(t, "Stitch_A", s.findDivert("Stitch_A", s.Current()).(*Stitch).Name())
+	assert.Equal(t, "Stitch_A Content", s.current().(*line).Render())
+	assert.Equal(t, "Stitch_A", s.findDivert("Stitch_A", s.current()).(*Stitch).Name())
 
-	s.Next()
-	s.Select(0)
-	s.Next()
-	s.Next()
-	s.Next()
+	s.next()
+	s.choose(0)
+	s.next()
+	s.next()
+	s.next()
 
-	assert.Equal(t, 1, s.findDivertCount("Stitch_A", s.Current()))
+	assert.Equal(t, 1, s.findDivertCount("Stitch_A", s.current()))
 }
 
 func TestConfictKnotAndStitchName(t *testing.T) {

@@ -8,15 +8,15 @@ import (
 
 // Story of the ink
 type Story struct {
-	start   InkObj
-	current InkObj
-	knots   []*knot
+	start InkObj
+	c     InkObj // current obj
+	knots []*knot
 
-	objMap   map[string]InkObj
-	objCount map[string]int
+	paths map[string]InkObj
+	vars  map[string]int
 }
 
-// InkObj is the basic element of the story
+// InkObj is the basic element of a story
 type InkObj interface {
 	Story() *Story
 	Parent() InkObj
@@ -27,34 +27,34 @@ type InkObj interface {
 	Path() string
 }
 
-// Current content of the story
-func (s *Story) Current() InkObj {
-	return s.current
+// current content of the story
+func (s *Story) current() InkObj {
+	return s.c
 }
 
-// Reset the current content to start
-func (s *Story) Reset() {
-	s.current = s.start
-	s.objCount = make(map[string]int)
+// reset the current content to start
+func (s *Story) reset() {
+	s.c = s.start
+	s.vars = make(map[string]int)
 }
 
-// Next content of the story
-func (s *Story) Next() InkObj {
-	if next := s.current.Next(); next != nil {
-		s.current = next
-		s.objCount[s.current.Path()]++
+// next content of the story
+func (s *Story) next() InkObj {
+	if n := s.c.Next(); n != nil {
+		s.c = n
+		s.vars[s.c.Path()]++
 
-		return next
+		return n
 	}
 	return nil
 }
 
-// Select the option of the current choices
-func (s *Story) Select(idx int) *Opt {
-	if c, ok := s.current.(*options); ok {
+// choose the option of the current choices
+func (s *Story) choose(idx int) *opt {
+	if c, ok := s.c.(*options); ok {
 		if opt := c.choose(idx); opt != nil {
-			s.current = opt
-			s.objCount[opt.Path()]++
+			s.c = opt
+			s.vars[opt.Path()]++
 			return opt
 		}
 	}
@@ -69,15 +69,15 @@ func (s *Story) Save() *State {
 
 // Load previous state into story
 func (s *Story) Load(state *State) error {
-	if obj, ok := s.objMap[state.path]; ok {
-		s.current = obj
+	if obj, ok := s.paths[state.path]; ok {
+		s.c = obj
 	} else {
 		return errors.Errorf("cannot find the obj: %s", state.path)
 	}
 
 	// copy all non-zero count into story's count
 	for k, v := range state.count {
-		s.objCount[k] = v
+		s.vars[k] = v
 	}
 
 	return nil
@@ -100,7 +100,7 @@ func (s *Story) findContainer(obj InkObj) (*knot, *Stitch) {
 // find divert count in the given path
 func (s *Story) findDivertCount(path string, obj InkObj) int {
 	if res := s.findDivert(path, obj); res != nil {
-		if count, ok := s.objCount[res.Path()]; ok {
+		if count, ok := s.vars[res.Path()]; ok {
 			return count
 		}
 	}
@@ -109,7 +109,7 @@ func (s *Story) findDivertCount(path string, obj InkObj) int {
 
 // find knot of the story by name
 func (s *Story) findKnot(name string) *knot {
-	if k, ok := s.objMap[name]; ok {
+	if k, ok := s.paths[name]; ok {
 		if kn, b := k.(*knot); b {
 			return kn
 		}
@@ -128,8 +128,8 @@ func (s *Story) findDivert(path string, obj InkObj) InkObj {
 		// local label
 		if kn != nil && st != nil {
 			p := kn.name + SPLIT + st.name + SPLIT + path
-			if s.objMap[p] != nil {
-				return s.objMap[p]
+			if s.paths[p] != nil {
+				return s.paths[p]
 			}
 		}
 		// find local stitch
@@ -144,8 +144,8 @@ func (s *Story) findDivert(path string, obj InkObj) InkObj {
 		if kn != nil {
 			p := regReplaceDot.ReplaceAllString(path, SPLIT+"$1")
 			p = kn.name + SPLIT + p
-			if s.objMap[p] != nil {
-				return s.objMap[p]
+			if s.paths[p] != nil {
+				return s.paths[p]
 			}
 		}
 		if k := s.findKnot(sp[0]); k != nil {
@@ -154,7 +154,7 @@ func (s *Story) findDivert(path string, obj InkObj) InkObj {
 	default: // could be - knot.stitch.label
 		p := regReplaceDot.ReplaceAllString(path, SPLIT+"$1")
 		// fmt.Println(path)
-		return s.objMap[p]
+		return s.paths[p]
 	}
 	return nil
 }
@@ -203,7 +203,7 @@ func Parse(input string) (*Story, error) {
 		}
 	}
 
-	s.Reset()
+	s.reset()
 	return s, nil
 }
 
@@ -215,10 +215,10 @@ func NewStory() *Story {
 	start := &line{raw: "[start]", path: "r"}
 
 	story := &Story{start: start}
-	story.current = story.start
+	story.c = story.start
 
-	story.objMap = make(map[string]InkObj)
-	story.objCount = make(map[string]int)
+	story.paths = make(map[string]InkObj)
+	story.vars = make(map[string]int)
 
 	return story
 }

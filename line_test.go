@@ -16,15 +16,15 @@ func TestInlineParse(t *testing.T) {
 
 	err = readLine(s, "-> Divert")
 	assert.Nil(t, err)
-	assert.Equal(t, "Divert", s.current.(*line).divert)
+	assert.Equal(t, "Divert", s.c.(*line).divert)
 
 	err = readLine(s, "This is a content. -> Divert #Tag A # TagB // Comment")
 	assert.Nil(t, err)
-	assert.Equal(t, "Divert", s.current.(*line).divert)
-	assert.Equal(t, "TagB", s.current.(*line).tags[1])
-	assert.Equal(t, "Tag A", s.current.(*line).tags[0])
-	assert.Equal(t, s, s.current.(*line).Story())
-	assert.True(t, len(s.current.(*line).comment) > 0)
+	assert.Equal(t, "Divert", s.c.(*line).divert)
+	assert.Equal(t, "TagB", s.c.(*line).tags[1])
+	assert.Equal(t, "Tag A", s.c.(*line).tags[0])
+	assert.Equal(t, s, s.c.(*line).Story())
+	assert.True(t, len(s.c.(*line).comment) > 0)
 }
 
 func TestDivert(t *testing.T) {
@@ -61,27 +61,27 @@ func TestDivert(t *testing.T) {
 
 	rand.Seed(time.Now().UnixNano())
 
-	for s.Next() != nil {
-		switch s.current.(type) {
+	for s.next() != nil {
+		switch s.c.(type) {
 		case *line:
-			t.Log(s.current.(*line).Render())
-		case *Opt:
-			t.Log(s.current.(*Opt).render(true))
+			t.Log(s.c.(*line).Render())
+		case *opt:
+			t.Log(s.c.(*opt).render(true))
 		case *gather:
-			t.Log(s.current.(*gather).Render())
+			t.Log(s.c.(*gather).Render())
 		case *options:
-			for _, o := range s.current.(*options).list() {
+			for _, o := range s.c.(*options).list() {
 				t.Log("*", o.render(true))
 			}
 
 			// random select
-			idx := rand.Intn(len(s.current.(*options).list()))
-			s.Select(idx)
+			idx := rand.Intn(len(s.c.(*options).list()))
+			s.choose(idx)
 			t.Logf("Select [%d]", idx)
 		}
 	}
 
-	assert.Equal(t, "Final Gather B", s.current.(*gather).raw)
+	assert.Equal(t, "Final Gather B", s.c.(*gather).raw)
 }
 
 func TestGlueParse(t *testing.T) {
@@ -99,19 +99,19 @@ func TestGlueParse(t *testing.T) {
 		return
 	}
 
-	s.Next()
-	s.Next()
+	s.next()
+	s.next()
 
-	assert.True(t, s.Current().(*line).glueStart)
-	assert.False(t, s.Current().(*line).glueEnd)
+	assert.True(t, s.current().(*line).glueStart)
+	assert.False(t, s.current().(*line).glueEnd)
 
-	s.Next()
-	assert.True(t, s.Current().(*line).glueEnd)
-	assert.False(t, s.Current().(*line).glueStart)
+	s.next()
+	assert.True(t, s.current().(*line).glueEnd)
+	assert.False(t, s.current().(*line).glueStart)
 
-	s.Next()
-	assert.True(t, s.Current().(*line).glueEnd)
-	assert.True(t, s.Current().(*line).glueStart)
+	s.next()
+	assert.True(t, s.current().(*line).glueEnd)
+	assert.True(t, s.current().(*line).glueStart)
 }
 
 func TestDivertNavigation(t *testing.T) {
@@ -137,22 +137,22 @@ func TestDivertNavigation(t *testing.T) {
 		return
 	}
 
-	s.Next()
-	s.Next()
-	assert.Equal(t, " gather ", s.Current().(*gather).Render())
+	s.next()
+	s.next()
+	assert.Equal(t, " gather ", s.current().(*gather).Render())
 
-	s.Next()
-	assert.Equal(t, "stitch_b", s.Current().(*Stitch).name)
+	s.next()
+	assert.Equal(t, "stitch_b", s.current().(*Stitch).name)
 
-	s.Next()
-	s.Next()
-	assert.Equal(t, " gather c", s.Current().(*gather).Render())
+	s.next()
+	s.next()
+	assert.Equal(t, " gather c", s.current().(*gather).Render())
 
-	s.Next()
-	assert.Equal(t, " opt a ", s.Current().(*Opt).render(false))
+	s.next()
+	assert.Equal(t, " opt a ", s.current().(*opt).render(false))
 
 	pf := assert.PanicTestFunc(func() {
-		s.Next()
+		s.next()
 	})
 
 	assert.Panics(t, pf)

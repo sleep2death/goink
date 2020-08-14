@@ -28,7 +28,7 @@ func readGather(s *Story, input string) error {
 		g := &gather{line: i, nesting: nesting}
 		g.story = s
 
-		obj := s.current
+		obj := s.c
 		var choices *options
 		for obj != nil {
 			if c, ok := obj.(*options); ok {
@@ -45,10 +45,10 @@ func readGather(s *Story, input string) error {
 			g.parent = choices.parent // set gather's grandpa to parent
 
 			choices.gather = g
-			s.current = g
+			s.c = g
 
 			g.path = choices.Path() + SPLIT + "g"
-			s.objMap[g.path] = g
+			s.paths[g.path] = g
 
 			if err := g.parseLabel(); err != nil {
 				return err
@@ -73,10 +73,10 @@ func (g *gather) parseLabel() error {
 				label = knot.Path() + SPLIT + label
 			}
 
-			if _, ok := g.story.objMap[label]; ok {
+			if _, ok := g.story.paths[label]; ok {
 				return errors.Errorf("duplicated label: %s", label)
 			}
-			g.story.objMap[label] = g
+			g.story.paths[label] = g
 			g.path = label
 		}
 		g.text = res[2]

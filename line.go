@@ -28,13 +28,13 @@ func readLine(s *Story, input string) error {
 	}
 
 	l.story = s
-	l.parent = s.current
+	l.parent = s.c
 
-	l.path = s.current.Path() + SPLIT + "i"
-	s.objMap[l.path] = l
+	l.path = s.c.Path() + SPLIT + "i"
+	s.paths[l.path] = l
 
-	s.current.SetNext(l)
-	s.current = l
+	s.c.SetNext(l)
+	s.c = l
 
 	return nil
 }

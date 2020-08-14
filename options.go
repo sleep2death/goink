@@ -22,7 +22,7 @@ func readOption(s *Story, input string) error {
 			return err
 		}
 
-		o := &Opt{line: i}
+		o := &opt{line: i}
 		o.story = s
 
 		// once-only option
@@ -32,7 +32,7 @@ func readOption(s *Story, input string) error {
 			o.sticky = false
 		}
 
-		obj := s.current
+		obj := s.c
 
 		var choices *options
 		// var gather *Gather
@@ -59,21 +59,21 @@ func readOption(s *Story, input string) error {
 		}
 
 		if choices == nil {
-			choices = &options{story: s, parent: s.current, nesting: nesting}
+			choices = &options{story: s, parent: s.c, nesting: nesting}
 
-			choices.path = s.current.Path() + SPLIT + "c"
-			s.objMap[choices.path] = choices
-			s.current.SetNext(choices)
+			choices.path = s.c.Path() + SPLIT + "c"
+			s.paths[choices.path] = choices
+			s.c.SetNext(choices)
 		}
 
 		o.path = choices.path + SPLIT + strconv.Itoa(len(choices.opts))
 
 		choices.opts = append(choices.opts, o)
-		s.objMap[o.path] = o
+		s.paths[o.path] = o
 
 		// s.current.SetNext(o)
 		o.parent = choices
-		s.current = o
+		s.c = o
 
 		// post parsing process
 		if err := o.parseExprc(); err != nil {
@@ -92,7 +92,7 @@ func readOption(s *Story, input string) error {
 type options struct {
 	story  *Story
 	parent InkObj
-	opts   []*Opt
+	opts   []*opt
 	path   string
 
 	gather  *gather
@@ -126,11 +126,11 @@ func (c *options) Next() InkObj {
 }
 
 // options of the choices
-func (c *options) list() (os []*Opt) {
+func (c *options) list() (os []*opt) {
 	for _, opt := range c.opts {
 		// condition test
 		if opt.condition != nil {
-			b, err := opt.condition.Bool(c.story.objCount)
+			b, err := opt.condition.Bool(c.story.vars)
 			if err != nil {
 				panic(err)
 			}
@@ -145,7 +145,7 @@ func (c *options) list() (os []*Opt) {
 		// sticky or once-only
 		if opt.sticky {
 			os = append(os, opt)
-		} else if count, ok := c.story.objCount[opt.Path()]; !ok || count == 0 {
+		} else if count, ok := c.story.vars[opt.Path()]; !ok || count == 0 {
 			os = append(os, opt)
 		}
 	}
@@ -153,7 +153,7 @@ func (c *options) list() (os []*Opt) {
 }
 
 // choose the option of the choices by index
-func (c *options) choose(idx int) *Opt {
+func (c *options) choose(idx int) *opt {
 	// filtered options
 	opts := c.list()
 
@@ -166,7 +166,7 @@ func (c *options) choose(idx int) *Opt {
 }
 
 // Opt of the options
-type Opt struct {
+type opt struct {
 	*line
 
 	sticky    bool
@@ -179,7 +179,7 @@ var (
 )
 
 // render option text with supressing
-func (o *Opt) render(supressing bool) string {
+func (o *opt) render(supressing bool) string {
 	res := supressingReg.FindStringSubmatch(o.text)
 	if res != nil {
 		before := res[1]
@@ -194,7 +194,7 @@ func (o *Opt) render(supressing bool) string {
 	return o.text
 }
 
-func (o *Opt) parseExprc() error {
+func (o *opt) parseExprc() error {
 	if res := exprReg.FindStringSubmatch(o.text); res != nil {
 		if c, err := newExprc(strings.TrimSpace(res[1])); err == nil {
 			o.condition = c
@@ -207,7 +207,7 @@ func (o *Opt) parseExprc() error {
 	return nil
 }
 
-func (o *Opt) parseLabel() error {
+func (o *opt) parseLabel() error {
 	if res := lableReg.FindStringSubmatch(o.text); res != nil {
 		label := strings.TrimSpace(res[1])
 		if len(label) > 0 {
@@ -217,10 +217,10 @@ func (o *Opt) parseLabel() error {
 				label = knot.Path() + SPLIT + label
 			}
 
-			if _, ok := o.story.objMap[label]; ok {
+			if _, ok := o.story.paths[label]; ok {
 				return errors.Errorf("duplicated label: %s", label)
 			}
-			o.story.objMap[label] = o
+			o.story.paths[label] = o
 			o.path = label
 		}
 		o.text = res[2]

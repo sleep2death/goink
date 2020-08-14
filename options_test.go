@@ -34,15 +34,15 @@ func TestChoicesFunctions(t *testing.T) {
 	s, err := Parse(input)
 	assert.Nil(t, err)
 
-	s.Next()
-	assert.Equal(t, "Hello, World", s.Current().(*line).Render())
+	s.next()
+	assert.Equal(t, "Hello, World", s.current().(*line).Render())
 
-	s.Next()
-	assert.Panics(t, assert.PanicTestFunc(func() { s.Current().(*options).SetNext(nil) }))
+	s.next()
+	assert.Panics(t, assert.PanicTestFunc(func() { s.current().(*options).SetNext(nil) }))
 
-	if choices, ok := s.Current().(*options); ok {
+	if choices, ok := s.current().(*options); ok {
 		// Choices can not go next, always return nil
-		assert.Nil(t, s.Next())
+		assert.Nil(t, s.next())
 
 		assert.Equal(t, 1, choices.nesting)
 		assert.Equal(t, 2, len(choices.list()))
@@ -68,7 +68,7 @@ func TestChoicesSupressing(t *testing.T) {
 	s, err := Parse(input)
 	assert.Nil(t, err)
 
-	if c, ok := s.Next().(*options); ok {
+	if c, ok := s.next().(*options); ok {
 		assert.Equal(t, "ABC.", c.opts[0].render(true))
 		assert.Equal(t, "ABCDEF", c.opts[0].render(false))
 
@@ -101,31 +101,31 @@ func TestStickyOption(t *testing.T) {
 	s, err := Parse(input)
 	assert.Nil(t, err)
 
-	s.Next()
-	s.Select(0)
-	s.Next()
-	s.Next()
+	s.next()
+	s.choose(0)
+	s.next()
+	s.next()
 
-	assert.Equal(t, 3, len(s.Current().(*options).list()))
+	assert.Equal(t, 3, len(s.current().(*options).list()))
 
-	s.Select(0)
+	s.choose(0)
 
-	s.Next()
-	s.Next()
-	s.Next()
+	s.next()
+	s.next()
+	s.next()
 
-	assert.Equal(t, 2, len(s.Current().(*options).list()))
+	assert.Equal(t, 2, len(s.current().(*options).list()))
 
 	// Select the first option again
-	opt := s.Select(0)
+	opt := s.choose(0)
 	assert.Equal(t, "Opt_B", opt.render(false))
 
-	s.Next()
-	s.Next()
-	s.Next()
+	s.next()
+	s.next()
+	s.next()
 
 	// sticky
-	assert.Equal(t, 2, len(s.Current().(*options).list()))
+	assert.Equal(t, 2, len(s.current().(*options).list()))
 }
 
 func TestConditionalOption(t *testing.T) {
@@ -138,9 +138,9 @@ func TestConditionalOption(t *testing.T) {
 	s, err := Parse(input)
 	assert.Nil(t, err)
 
-	s.Next()
+	s.next()
 
-	choices := s.Current().(*options)
+	choices := s.current().(*options)
 	options := choices.opts
 	// options := choices.List()
 
@@ -160,8 +160,8 @@ func TestLabelledOption(t *testing.T) {
 	s, err := Parse(input)
 	assert.Nil(t, err)
 
-	s.Next()
-	choices := s.Current().(*options)
+	s.next()
+	choices := s.current().(*options)
 	options := choices.opts
 	assert.Equal(t, "label_a", options[0].path)
 	assert.Equal(t, "label_b", options[1].path)
@@ -184,22 +184,22 @@ func TestLablledOptionAndGather(t *testing.T) {
 	s, err := Parse(input)
 	assert.Nil(t, err)
 
-	s.Next()
-	s.Next()
-	s.Next()
+	s.next()
+	s.next()
+	s.next()
 
-	assert.Equal(t, 2, len(s.Current().(*options).list()))
-	assert.Equal(t, "Knot_A__lable_b", s.Current().(*options).list()[1].Path())
+	assert.Equal(t, 2, len(s.current().(*options).list()))
+	assert.Equal(t, "Knot_A__lable_b", s.current().(*options).list()[1].Path())
 
-	s.Select(0)
-	s.Next()
+	s.choose(0)
+	s.next()
 
-	assert.Equal(t, "Knot_A__lable_g", s.Current().(*gather).Path())
-	s.Next()
-	s.Next()
+	assert.Equal(t, "Knot_A__lable_g", s.current().(*gather).Path())
+	s.next()
+	s.next()
 
-	assert.Equal(t, 1, s.objCount["Knot_A__lable_g"])
-	options := s.Current().(*options).list()
+	assert.Equal(t, 1, s.vars["Knot_A__lable_g"])
+	options := s.current().(*options).list()
 	assert.Equal(t, 3, len(options))
 
 	assert.Equal(t, "Knot_A__Stitch_A__lable_a", options[0].Path())
@@ -251,7 +251,7 @@ func TestInvalidoptions(t *testing.T) {
 	assert.Nil(t, err)
 
 	p := assert.PanicTestFunc(func() {
-		s.Next().(*options).list()
+		s.next().(*options).list()
 	})
 
 	assert.Panics(t, p)

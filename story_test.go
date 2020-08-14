@@ -43,30 +43,30 @@ func TestChoicesNesting(t *testing.T) {
 
 	rand.Seed(time.Now().UnixNano())
 
-	for s.Next() != nil {
+	for s.next() != nil {
 		// t.Log(s.current.Path())
-		switch s.current.(type) {
+		switch s.c.(type) {
 		case *line:
-			t.Log(s.current.(*line).Render())
-		case *Opt:
-			t.Log(s.current.(*Opt).render(false))
+			t.Log(s.c.(*line).Render())
+		case *opt:
+			t.Log(s.c.(*opt).render(false))
 		case *gather:
-			t.Log(s.current.(*gather).Render())
+			t.Log(s.c.(*gather).Render())
 		case *options:
-			for _, o := range s.current.(*options).list() {
+			for _, o := range s.c.(*options).list() {
 				t.Log("*", o.render(true))
 			}
 
 			// random select
-			idx := rand.Intn(len(s.current.(*options).list()))
-			s.Select(idx)
-			t.Logf("Select [%d]: %s", idx, s.current.(*Opt).render(false))
+			idx := rand.Intn(len(s.c.(*options).list()))
+			s.choose(idx)
+			t.Logf("Select [%d]: %s", idx, s.c.(*opt).render(false))
 		}
 	}
 
-	assert.Equal(t, "Final Content", s.current.(*line).Render())
-	assert.Equal(t, "Knot_A__stitch_a__i", s.current.Path())
-	assert.Equal(t, s.objMap["Knot_A__stitch_a__i"], s.current)
+	assert.Equal(t, "Final Content", s.c.(*line).Render())
+	assert.Equal(t, "Knot_A__stitch_a__i", s.c.Path())
+	assert.Equal(t, s.paths["Knot_A__stitch_a__i"], s.c)
 }
 
 func TestInkObjPath(t *testing.T) {
@@ -123,20 +123,20 @@ func TestStorySave(t *testing.T) {
 		return
 	}
 
-	s.Next()
-	s.Next()
-	s.Next()
+	s.next()
+	s.next()
+	s.next()
 
-	assert.Equal(t, "Knot_A", s.Current().Path())
+	assert.Equal(t, "Knot_A", s.current().Path())
 
-	s.Next()
-	s.Next()
-	s.Next()
+	s.next()
+	s.next()
+	s.next()
 
-	o := s.Select(8) // invalid test
+	o := s.choose(8) // invalid test
 	assert.Nil(t, o)
 
-	o = s.Select(0)
+	o = s.choose(0)
 	assert.Equal(t, "Knot_A__Stitch_A__c__0", o.Path())
 
 	state := s.Save()
@@ -149,13 +149,13 @@ func TestStorySave(t *testing.T) {
 	err = ss.Load(state)
 
 	assert.Nil(t, err)
-	assert.Equal(t, "Knot_A__Stitch_A__c__0", s.Current().Path())
-	assert.Equal(t, 1, s.objCount[s.Current().Path()])
+	assert.Equal(t, "Knot_A__Stitch_A__c__0", s.current().Path())
+	assert.Equal(t, 1, s.vars[s.current().Path()])
 
-	ss.Next()
-	ss.Next()
-	ss.Next()
-	assert.Equal(t, "Knot_B__Stitch_A__i", ss.Current().Path())
+	ss.next()
+	ss.next()
+	ss.next()
+	assert.Equal(t, "Knot_B__Stitch_A__i", ss.current().Path())
 
 	state.path = "invalid path"
 	err = ss.Load(state)
