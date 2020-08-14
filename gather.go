@@ -7,25 +7,25 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Gather node of the choices
-type Gather struct {
+// gather node of the choices
+type gather struct {
 	*line
 	nesting int
 }
 
 var gatherReg = regexp.MustCompile(`^((-\s*)+)([^>].+)`)
 
-// NewGather create and insert a new gather into story
-func NewGather(s *Story, input string) error {
+// readGather create and insert a new gather into story
+func readGather(s *Story, input string) error {
 	res := gatherReg.FindStringSubmatch(input)
 	if res != nil {
 		nesting := len(strings.Join(strings.Fields(res[1]), ""))
-		i, err := createNewInline(res[3])
+		i, err := newLine(res[3])
 		if err != nil {
 			return err
 		}
 
-		g := &Gather{line: i, nesting: nesting}
+		g := &gather{line: i, nesting: nesting}
 		g.story = s
 
 		obj := s.current
@@ -63,7 +63,7 @@ func NewGather(s *Story, input string) error {
 	return ErrNotMatch
 }
 
-func (g *Gather) parseLabel() error {
+func (g *gather) parseLabel() error {
 	if res := lableReg.FindStringSubmatch(g.text); res != nil {
 		label := strings.TrimSpace(res[1])
 		if len(label) > 0 {

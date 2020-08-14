@@ -57,5 +57,5 @@ func TestGatherLableParsing(t *testing.T) {
 	t.Log(s.Current())
 	s.Next()
 
-	assert.Equal(t, "Knot_A__Stitch_A__lable_g", s.Current().(*Gather).Path())
+	assert.Equal(t, "Knot_A__Stitch_A__lable_g", s.Current().(*gather).Path())
 }

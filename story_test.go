@@ -50,8 +50,8 @@ func TestChoicesNesting(t *testing.T) {
 			t.Log(s.current.(*line).render())
 		case *Option:
 			t.Log(s.current.(*Option).Render(false))
-		case *Gather:
-			t.Log(s.current.(*Gather).render())
+		case *gather:
+			t.Log(s.current.(*gather).render())
 		case *Choices:
 			for _, o := range s.current.(*Choices).options() {
 				t.Log("*", o.Render(true))

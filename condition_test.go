@@ -6,26 +6,26 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewCondition(t *testing.T) {
-	condA, err := NewCondition("not (Knot_A > 0)")
+func TestNewExprc(t *testing.T) {
+	condA, err := NewExprc("not (Knot_A > 0)")
 	assert.Nil(t, err)
 
-	condB, err := NewCondition("Knot_B == 0")
+	condB, err := NewExprc("Knot_B == 0")
 	assert.Nil(t, err)
 
-	condC, err := NewCondition("abc +  def")
+	condC, err := NewExprc("abc +  def")
 	assert.Nil(t, err)
 
-	condD, err := NewCondition("(Knot_A > 0) and (Knot_B == 0)")
+	condD, err := NewExprc("(Knot_A > 0) and (Knot_B == 0)")
 	assert.Nil(t, err)
 
-	condE, err := NewCondition("intA + intB")
+	condE, err := NewExprc("intA + intB")
 	assert.Nil(t, err)
 
-	condF, err := NewCondition("'intA' + 'intB'")
+	condF, err := NewExprc("'intA' + 'intB'")
 	assert.Nil(t, err)
 
-	_, err = NewCondition("(Knot_A > 0 and (Knot_B == 0)")
+	_, err = NewExprc("(Knot_A > 0 and (Knot_B == 0)")
 	assert.NotNil(t, err)
 
 	env := make(map[string]int)

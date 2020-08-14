@@ -10,16 +10,16 @@ import (
 
 var regReplaceDot = regexp.MustCompile(`\.(\w+)`)
 
-// Condition of the inline
-type Condition struct {
+// exprc in the line
+type exprc struct {
 	// env     map[string]interface{}
 	program *vm.Program
 	raw     string
 }
 
-// NewCondition creates a condition with the given expr
-func NewCondition(code string) (*Condition, error) {
-	cond := &Condition{raw: code}
+// NewExprc creates a condition with the given expr
+func NewExprc(code string) (*exprc, error) {
+	cond := &exprc{raw: code}
 	c := regReplaceDot.ReplaceAllString(code, SPLIT+"$1")
 
 	program, err := expr.Compile(c, expr.Env(nil))
@@ -32,8 +32,8 @@ func NewCondition(code string) (*Condition, error) {
 	return cond, nil
 }
 
-// Bool return the expr result as bool value
-func (c *Condition) Bool(count map[string]int) (bool, error) {
+// Bool return the exprc result as bool value
+func (c *exprc) Bool(count map[string]int) (bool, error) {
 	output, err := expr.Run(c.program, count)
 	if err != nil {
 		return false, err

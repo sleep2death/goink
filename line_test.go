@@ -11,14 +11,14 @@ import (
 func TestInlineParse(t *testing.T) {
 	s := NewStory()
 
-	err := NewInline(s, "--> Divert")
+	err := readLine(s, "--> Divert")
 	assert.NotNil(t, err)
 
-	err = NewInline(s, "-> Divert")
+	err = readLine(s, "-> Divert")
 	assert.Nil(t, err)
 	assert.Equal(t, "Divert", s.current.(*line).divert)
 
-	err = NewInline(s, "This is a content. -> Divert #Tag A # TagB // Comment")
+	err = readLine(s, "This is a content. -> Divert #Tag A # TagB // Comment")
 	assert.Nil(t, err)
 	assert.Equal(t, "Divert", s.current.(*line).divert)
 	assert.Equal(t, "TagB", s.current.(*line).tags[1])
@@ -67,8 +67,8 @@ func TestDivert(t *testing.T) {
 			t.Log(s.current.(*line).render())
 		case *Option:
 			t.Log(s.current.(*Option).Render(true))
-		case *Gather:
-			t.Log(s.current.(*Gather).render())
+		case *gather:
+			t.Log(s.current.(*gather).render())
 		case *Choices:
 			for _, o := range s.current.(*Choices).options() {
 				t.Log("*", o.Render(true))
@@ -81,7 +81,7 @@ func TestDivert(t *testing.T) {
 		}
 	}
 
-	assert.Equal(t, "Final Gather B", s.current.(*Gather).raw)
+	assert.Equal(t, "Final Gather B", s.current.(*gather).raw)
 }
 
 func TestGlueParse(t *testing.T) {
@@ -139,14 +139,14 @@ func TestDivertNavigation(t *testing.T) {
 
 	s.Next()
 	s.Next()
-	assert.Equal(t, " gather ", s.Current().(*Gather).render())
+	assert.Equal(t, " gather ", s.Current().(*gather).render())
 
 	s.Next()
 	assert.Equal(t, "stitch_b", s.Current().(*Stitch).name)
 
 	s.Next()
 	s.Next()
-	assert.Equal(t, " gather c", s.Current().(*Gather).render())
+	assert.Equal(t, " gather c", s.Current().(*gather).render())
 
 	s.Next()
 	assert.Equal(t, " opt a ", s.Current().(*Option).Render(false))

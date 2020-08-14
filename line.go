@@ -30,28 +30,28 @@ var (
 	illegalGatherReg = regexp.MustCompile(`\-\-\>`)
 )
 
-// NewInline parse and insert a new inline into story
-func NewInline(s *Story, input string) error {
-	i, err := createNewInline(input)
+// readLine parse and insert a new inline into story
+func readLine(s *Story, input string) error {
+	l, err := newLine(input)
 
 	if err != nil {
 		return err
 	}
 
-	i.story = s
-	i.parent = s.current
+	l.story = s
+	l.parent = s.current
 
-	i.path = s.current.Path() + SPLIT + "i"
-	s.objMap[i.path] = i
+	l.path = s.current.Path() + SPLIT + "i"
+	s.objMap[l.path] = l
 
-	s.current.SetNext(i)
-	s.current = i
+	s.current.SetNext(l)
+	s.current = l
 
 	return nil
 }
 
-// createNewInline from the input
-func createNewInline(input string) (*line, error) {
+// newLine from the input
+func newLine(input string) (*line, error) {
 	// Inline
 	i := &line{raw: input}
 

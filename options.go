@@ -17,7 +17,7 @@ func NewOption(s *Story, input string) error {
 	if res != nil {
 		nesting := len(strings.Join(strings.Fields(res[1]), ""))
 
-		i, err := createNewInline(res[4])
+		i, err := newLine(res[4])
 		if err != nil {
 			return err
 		}
@@ -38,7 +38,7 @@ func NewOption(s *Story, input string) error {
 		// var gather *Gather
 
 		for obj != nil {
-			if g, ok := obj.(*Gather); ok {
+			if g, ok := obj.(*gather); ok {
 				if t := nesting - g.nesting; t == 0 {
 					break
 				}
@@ -95,7 +95,7 @@ type Choices struct {
 	opts   []*Option
 	path   string
 
-	gather  *Gather
+	gather  *gather
 	nesting int
 }
 
@@ -170,7 +170,7 @@ type Option struct {
 	*line
 
 	sticky    bool
-	condition *Condition
+	condition *exprc
 }
 
 var (
@@ -196,7 +196,7 @@ func (o *Option) Render(supressing bool) string {
 
 func (o *Option) parseCondition() error {
 	if res := exprReg.FindStringSubmatch(o.text); res != nil {
-		if c, err := NewCondition(strings.TrimSpace(res[1])); err == nil {
+		if c, err := NewExprc(strings.TrimSpace(res[1])); err == nil {
 			o.condition = c
 			o.text = res[2]
 		} else {

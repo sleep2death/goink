@@ -194,7 +194,7 @@ func TestLablledOptionAndGather(t *testing.T) {
 	s.Select(0)
 	s.Next()
 
-	assert.Equal(t, "Knot_A__lable_g", s.Current().(*Gather).Path())
+	assert.Equal(t, "Knot_A__lable_g", s.Current().(*gather).Path())
 	s.Next()
 	s.Next()
 

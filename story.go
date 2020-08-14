@@ -198,7 +198,7 @@ func Parse(input string) (*Story, error) {
 // NewStory create an empty story instance
 func NewStory() *Story {
 	// Inline always be the last parser
-	parsers = append(parsers, NewKnot, NewStitch, NewOption, NewGather, NewInline)
+	parsers = append(parsers, NewKnot, NewStitch, NewOption, readGather, readLine)
 
 	start := &line{raw: "[start]", path: "r"}
 
