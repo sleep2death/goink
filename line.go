@@ -33,9 +33,7 @@ func readLine(s *Story, input string) error {
 	l.path = s.c.Path() + SPLIT + "i"
 	s.paths[l.path] = l
 
-	s.c.SetNext(l)
-	s.c = l
-
+	s.setNext(l)
 	return nil
 }
 
@@ -94,8 +92,8 @@ func newLine(input string) (*line, error) {
 // line node of the story
 type line struct {
 	story  *Story
-	parent InkObj
-	next   InkObj
+	parent Node
+	next   Node
 	path   string
 
 	raw string
@@ -116,7 +114,7 @@ func (l *line) render() string {
 }
 
 // Parent of the line
-func (l *line) Parent() InkObj {
+func (l *line) Parent() Node {
 	return l.parent
 }
 
@@ -126,12 +124,12 @@ func (l *line) Path() string {
 }
 
 // SetNext content of the inline
-func (l *line) SetNext(obj InkObj) {
+func (l *line) SetNext(obj Node) {
 	l.next = obj
 }
 
 // Next content of the inline
-func (l *line) Next() InkObj {
+func (l *line) Next() Node {
 	// divert
 	if l.divert != "" {
 		// return i.story.FindDivert(i.divert).Next()
@@ -160,6 +158,11 @@ func (l *line) Next() InkObj {
 	}
 
 	return nil
+}
+
+func (l *line) Render() (string, []string) {
+	// TODO: inline logic
+	return l.text, l.tags
 }
 
 // Story of the inline

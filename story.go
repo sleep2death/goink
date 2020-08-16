@@ -9,29 +9,40 @@ import (
 
 // Story of the ink
 type Story struct {
-	start InkObj
-	c     InkObj // current obj
+	start Node
+	c     Node // current obj
 	knots []*knot
 
-	paths map[string]InkObj
+	paths map[string]Node
 	vars  map[string]int
 
 	mux sync.Mutex
 }
 
-// InkObj is the basic element of a story
-type InkObj interface {
+// Node is the basic element of a story
+type Node interface {
 	Story() *Story
-	Parent() InkObj
-
-	Next() InkObj
-	SetNext(obj InkObj)
+	Parent() Node
 
 	Path() string
 }
 
+// Flow content - which can go next
+type Flow interface {
+	Next() Node
+	SetNext(obj Node)
+
+	Render() (text string, tags []string)
+}
+
+// Choices content - which has one/more option(s)
+type Choices interface {
+	Render(supressing bool) (opts []string, tag []string)
+	Select(idx int) Node
+}
+
 // current content of the story
-func (s *Story) current() InkObj {
+func (s *Story) current() Node {
 	return s.c
 }
 
@@ -42,13 +53,26 @@ func (s *Story) reset() {
 }
 
 // next content of the story
-func (s *Story) next() InkObj {
-	if n := s.c.Next(); n != nil {
-		s.c = n
-		s.vars[s.c.Path()]++
+func (s *Story) next() Node {
+	if current := s.canNext(); current != nil {
+		if n := current.Next(); n != nil {
+			s.c = n
+			s.vars[s.c.Path()]++
 
-		return n
+			return n
+		}
 	}
+
+	return nil
+	// panic(errors.Errorf("current obj can not go next: %v", s.c))
+}
+
+// next content of the story
+func (s *Story) canNext() Flow {
+	if current, ok := s.c.(Flow); ok {
+		return current
+	}
+
 	return nil
 }
 
@@ -116,7 +140,7 @@ func (s *Story) Load(state *State) error {
 }
 
 // find container of the current inkObj
-func (s *Story) findContainer(obj InkObj) (*knot, *Stitch) {
+func (s *Story) findContainer(obj Node) (*knot, *Stitch) {
 	for obj != nil {
 		if st, ok := obj.(*Stitch); ok {
 			return st.k, st
@@ -130,7 +154,7 @@ func (s *Story) findContainer(obj InkObj) (*knot, *Stitch) {
 }
 
 // find divert count in the given path
-func (s *Story) findDivertCount(path string, obj InkObj) int {
+func (s *Story) findDivertCount(path string, obj Node) int {
 	if res := s.findDivert(path, obj); res != nil {
 		if count, ok := s.vars[res.Path()]; ok {
 			return count
@@ -151,7 +175,7 @@ func (s *Story) findKnot(name string) *knot {
 }
 
 // find divert in the given path
-func (s *Story) findDivert(path string, obj InkObj) InkObj {
+func (s *Story) findDivert(path string, obj Node) Node {
 	sp := strings.Split(path, ".")
 	kn, st := s.findContainer(obj)
 
@@ -212,6 +236,15 @@ func (s *Story) parseLine(input string) error {
 	return nil
 }
 
+func (s *Story) setNext(obj Node) {
+	if current := s.canNext(); current != nil {
+		current.SetNext(obj)
+		s.c = obj
+	} else {
+		panic(errors.Errorf("current obj can not set next: %v", s.c))
+	}
+}
+
 // ErrNotMatch the regexp error
 var ErrNotMatch error = errors.New("RegExp Not Match")
 
@@ -249,7 +282,7 @@ func NewStory() *Story {
 	story := &Story{start: start}
 	story.c = story.start
 
-	story.paths = make(map[string]InkObj)
+	story.paths = make(map[string]Node)
 	story.vars = make(map[string]int)
 
 	return story

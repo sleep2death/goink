@@ -38,7 +38,6 @@ func TestChoicesFunctions(t *testing.T) {
 	assert.Equal(t, "Hello, World", s.current().(*line).render())
 
 	s.next()
-	assert.Panics(t, assert.PanicTestFunc(func() { s.current().(*options).SetNext(nil) }))
 
 	if choices, ok := s.current().(*options); ok {
 		// Choices can not go next, always return nil

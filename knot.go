@@ -74,7 +74,7 @@ type knot struct {
 
 	path     string
 	stitches []*Stitch
-	next     InkObj
+	next     Node
 }
 
 // Path of the knot
@@ -93,18 +93,23 @@ func (k *knot) Story() *Story {
 }
 
 // Parent of the knot should always be nil
-func (k *knot) Parent() InkObj {
+func (k *knot) Parent() Node {
 	return nil
 }
 
 // SetNext of the knot
-func (k *knot) SetNext(obj InkObj) {
+func (k *knot) SetNext(obj Node) {
 	k.next = obj
 }
 
 // Next of the knot
-func (k *knot) Next() InkObj {
+func (k *knot) Next() Node {
 	return k.next
+}
+
+// Render the content of knot... should be both empty
+func (k *knot) Render() (output string, tags []string) {
+	return "", nil
 }
 
 // Stitch is a sub container of a knot
@@ -114,7 +119,7 @@ type Stitch struct {
 	name  string
 
 	path string
-	next InkObj
+	next Node
 }
 
 // Name of the stitch
@@ -133,18 +138,23 @@ func (s *Stitch) Story() *Story {
 }
 
 // Parent of the stitch should always be nil
-func (s *Stitch) Parent() InkObj {
+func (s *Stitch) Parent() Node {
 	return nil
 }
 
 // SetNext of the stitch
-func (s *Stitch) SetNext(obj InkObj) {
+func (s *Stitch) SetNext(obj Node) {
 	s.next = obj
 }
 
 // Next of the stitch
-func (s *Stitch) Next() InkObj {
+func (s *Stitch) Next() Node {
 	return s.next
+}
+
+// Render the content of stitch... should be both empty
+func (s *Stitch) Render() (output string, tags []string) {
+	return "", nil
 }
 
 // findStitch of the knot by name

@@ -63,7 +63,8 @@ func readOption(s *Story, input string) error {
 
 			choices.path = s.c.Path() + SPLIT + "c"
 			s.paths[choices.path] = choices
-			s.c.SetNext(choices)
+
+			s.setNext(choices)
 		}
 
 		o.path = choices.path + SPLIT + strconv.Itoa(len(choices.opts))
@@ -91,7 +92,7 @@ func readOption(s *Story, input string) error {
 // options of the story
 type options struct {
 	story  *Story
-	parent InkObj
+	parent Node
 	opts   []*opt
 	path   string
 
@@ -110,19 +111,8 @@ func (c *options) Path() string {
 }
 
 // Parent of the choices
-func (c *options) Parent() InkObj {
+func (c *options) Parent() Node {
 	return c.parent
-}
-
-// SetNext of the choices should fire panic
-func (c *options) SetNext(obj InkObj) {
-	panic(errors.Errorf("choices can not set next: %v", obj))
-}
-
-// Next content of the choices should be nil
-func (c *options) Next() InkObj {
-	// panic(errors.New("choices can not go next"))
-	return nil
 }
 
 // options of the choices
