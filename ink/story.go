@@ -1,13 +1,14 @@
 package ink
 
 import (
+	"strings"
 	"sync"
 
 	"github.com/pkg/errors"
 )
 
 var (
-	parsers []ParseFunc
+	ErrNotMatch error = errors.New("RegExp Not Match")
 )
 
 const (
@@ -54,7 +55,7 @@ type Choices interface {
 
 // CanNext content - which can go next
 type CanNext interface {
-	Next() Node
+	Next() (Node, error)
 	SetNext(node Node)
 	Render() (text string, tags []string)
 }
@@ -67,7 +68,8 @@ type Story struct {
 	start Node
 	end   Node
 
-	paths map[string]Node
+	paths   map[string]Node
+	parsers []ParseFunc
 
 	mux sync.Mutex
 }
@@ -80,7 +82,14 @@ func (s *Story) Resume(ctx *Context) (sec *Section, err error) {
 	if err := s.load(ctx); err != nil {
 		return nil, err
 	}
-	return s.resume()
+
+	if sec, err = s.resume(); err != nil {
+		return nil, err
+	}
+
+	// update ctx
+	*ctx = s.save()
+	return
 }
 
 // Pick the option
@@ -114,7 +123,11 @@ loop:
 		case Choices:
 			break loop
 		case CanNext:
-			s.current = s.current.(CanNext).Next()
+			n, err := s.current.(CanNext).Next()
+			if err != nil {
+				return nil, err
+			}
+			s.current = n
 		default:
 			return nil, errors.Errorf("current node is not recgonized: %s", s.current.Path())
 		}
@@ -186,6 +199,32 @@ func (s *Story) load(ctx *Context) error {
 	return nil
 }
 
+func (s *Story) save() Context {
+	return Context{current: s.current.Path(), vars: copyMap(s.vars)}
+}
+
+func copyMap(m map[string]interface{}) map[string]interface{} {
+	cp := make(map[string]interface{})
+	for k, v := range m {
+		vm, ok := v.(map[string]interface{})
+		if ok {
+			cp[k] = copyMap(vm)
+		} else {
+			cp[k] = v
+		}
+	}
+
+	return cp
+}
+
+func (s *Story) divert(path string, from Node) Node {
+	sp := strings.Split(path, ".")
+	if len(sp) == 1 {
+		return s.paths[path]
+	}
+	return nil
+}
+
 // Context of the story
 type Context struct {
 	current string
@@ -244,12 +283,85 @@ func (n Nodes) NewSection() *Section {
 	return sec
 }
 
-// ParseFunc of the story
-type ParseFunc func(s *Story, input string) error
+type start struct {
+	*base
+	next Node
+}
+
+func (s *start) SetNext(n Node) {
+	s.next = n
+}
+
+func (s *start) Next() (Node, error) {
+	if s.next == nil {
+		return nil, errors.New("current node can not go next: [start]")
+	}
+
+	return s.next, nil
+}
+
+func (s *start) Render() (text string, tags []string) {
+	text = "[start]"
+	tags = append(tags, "START")
+	return
+}
+
+type end struct {
+	*base
+}
+
+func (e *end) End() (text string, tags []string) {
+	text = "[end]"
+	tags = append(tags, "END")
+	return
+}
 
 // Default story
 func Default() *Story {
-	// parsers = append(parsers, readLine)
-	story := &Story{}
+	parsers := []ParseFunc{readLine}
+
+	s := &start{base: &base{path: "start"}}
+	e := &end{base: &base{path: "end"}}
+	s.SetNext(e)
+
+	story := &Story{start: s, end: e, parsers: parsers}
+
+	s.story = story
+	e.story = story
+
+	story.paths = make(map[string]Node)
+	story.vars = make(map[string]interface{})
+
+	story.paths["start"] = s
+	story.paths["end"] = e
+
+	story.current = s
 	return story
+}
+
+// ParseFunc of the story
+type ParseFunc func(s *Story, input string) error
+
+func (s *Story) Parse(input string) error {
+	contents := strings.Split(input, "\n")
+	for _, line := range contents {
+		// trim spaces and skip empty lines
+		l := strings.TrimRight(strings.TrimSpace(line), "\r\n")
+		if len(l) == 0 {
+			continue
+		}
+
+		// passing raw input into parsers
+		for _, parser := range s.parsers {
+			if err := parser(s, l); err != nil {
+				if err != ErrNotMatch {
+					return err
+				}
+			} else {
+				continue
+			}
+		}
+	}
+
+	return nil
 }
