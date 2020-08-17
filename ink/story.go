@@ -147,7 +147,7 @@ func (s *Story) pick(idx int) (sec *Section, err error) {
 	return s.resume()
 }
 
-func (s *Story) isNext() CanNext {
+func (s *Story) next() CanNext {
 	if current, ok := s.current.(CanNext); ok {
 		return current
 	}

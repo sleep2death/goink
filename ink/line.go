@@ -33,7 +33,7 @@ func readLine(s *Story, input string) error {
 	l.path = s.current.Path() + PathSplit + "i"
 	s.paths[l.path] = l
 
-	if n, ok := s.current.(CanNext); ok {
+	if n := s.next(); n != nil {
 		n.SetNext(l)
 		s.current = l
 
