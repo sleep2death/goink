@@ -117,13 +117,13 @@ loop:
 			return nil, err
 		}
 
-		switch s.current.(type) {
+		switch node := s.current.(type) {
 		case End:
 			break loop
 		case Choices:
 			break loop
 		case CanNext:
-			n, err := s.current.(CanNext).Next()
+			n, err := node.Next()
 			if err != nil {
 				return nil, err
 			}
@@ -267,17 +267,17 @@ type Nodes []Node
 func (n Nodes) NewSection() *Section {
 	sec := &Section{}
 	for _, node := range n {
-		switch node.(type) {
+		switch node := node.(type) {
 		case End:
 			sec.end = true
-			sec.add(node.(End).End())
+			sec.add(node.End())
 		case Choices:
-			opts, optsTags := node.(Choices).List()
+			opts, optsTags := node.List()
 
 			sec.opts = opts
 			sec.optsTags = optsTags
 		case CanNext:
-			sec.add(node.(CanNext).Render())
+			sec.add(node.Render())
 		}
 	}
 	return sec
