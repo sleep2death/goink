@@ -6,6 +6,15 @@ import (
 	"github.com/pkg/errors"
 )
 
+var (
+	parsers []ParseFunc
+)
+
+const (
+	// PathSplit sign of the path
+	PathSplit string = "__"
+)
+
 // Node is the basic element of a story
 type Node interface {
 	Story() *Story
@@ -14,6 +23,25 @@ type Node interface {
 	Path() string
 }
 
+type base struct {
+	story  *Story
+	parent Node
+	path   string
+}
+
+func (b *base) Story() *Story {
+	return b.story
+}
+
+func (b *base) Parent() Node {
+	return b.parent
+}
+
+func (b *base) Path() string {
+	return b.path
+}
+
+// End of story
 type End interface {
 	End() (text string, tags []string)
 }
@@ -24,19 +52,11 @@ type Choices interface {
 	List() (text []string, tags [][]string)
 }
 
-// Flow content - which can go next
+// CanNext content - which can go next
 type CanNext interface {
 	Next() Node
-	SetNext(obj Node)
-
+	SetNext(node Node)
 	Render() (text string, tags []string)
-}
-
-type Nodes []Node
-
-type Context struct {
-	current string
-	vars    map[string]interface{}
 }
 
 // Story of the ink
@@ -52,8 +72,32 @@ type Story struct {
 	mux sync.Mutex
 }
 
-// Continue the story
-func (s *Story) Continue() (nodes Nodes, err error) {
+// Resume the story
+func (s *Story) Resume(ctx *Context) (sec *Section, err error) {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+
+	if err := s.load(ctx); err != nil {
+		return nil, err
+	}
+	return s.resume()
+}
+
+// Pick the option
+func (s *Story) Pick(ctx *Context, idx int) (sec *Section, err error) {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+
+	if err := s.load(ctx); err != nil {
+		return nil, err
+	}
+	return s.pick(idx)
+}
+
+// resume the story
+func (s *Story) resume() (sec *Section, err error) {
+	var nodes Nodes
+loop:
 	for {
 		if s.current == nil {
 			return nil, errors.New("current node is nil")
@@ -66,24 +110,28 @@ func (s *Story) Continue() (nodes Nodes, err error) {
 
 		switch s.current.(type) {
 		case End:
-			return
+			break loop
 		case Choices:
-			return
+			break loop
 		case CanNext:
 			s.current = s.current.(CanNext).Next()
+		default:
+			return nil, errors.Errorf("current node is not recgonized: %s", s.current.Path())
 		}
 	}
+
+	return nodes.NewSection(), nil
 }
 
-// Choose one of the current choices' option,
-// and Continue
-func (s *Story) Choose(idx int) (nodes Nodes, err error) {
-	if c, err := s.choose(idx); err != nil {
+// pick one of the current choices' option,
+// and resume
+func (s *Story) pick(idx int) (sec *Section, err error) {
+	c, err := s.choose(idx)
+	if err != nil {
 		return nil, err
-	} else {
-		s.current = c
-		return s.Continue()
 	}
+	s.current = c
+	return s.resume()
 }
 
 func (s *Story) isNext() CanNext {
@@ -124,4 +172,84 @@ func (s *Story) choose(idx int) (Node, error) {
 	}
 
 	return nil, errors.Errorf("%s is not [Choices]", s.current.Path())
+}
+
+// load from context
+func (s *Story) load(ctx *Context) error {
+	n, ok := s.paths[ctx.current]
+	if !ok {
+		return errors.Errorf("current path [%s] is not existed", ctx.current)
+	}
+
+	s.current = n
+	s.vars = ctx.vars
+	return nil
+}
+
+// Context of the story
+type Context struct {
+	current string
+	vars    map[string]interface{}
+}
+
+// Current path of the story
+func (c *Context) Current() string {
+	return c.current
+}
+
+// Vars of the story
+func (c *Context) Vars() map[string]interface{} {
+	return c.vars
+}
+
+// Section is rendered result of current story
+type Section struct {
+	text string
+	tags []string
+
+	opts     []string
+	optsTags [][]string
+
+	end bool
+}
+
+func (s *Section) add(text string, tags []string) {
+	if len(text) > 0 {
+		s.text = s.text + "\n" + text
+	}
+
+	s.tags = append(s.tags, tags...)
+}
+
+// Nodes list
+type Nodes []Node
+
+// NewSection creates the rendered result of the nodes
+func (n Nodes) NewSection() *Section {
+	sec := &Section{}
+	for _, node := range n {
+		switch node.(type) {
+		case End:
+			sec.end = true
+			sec.add(node.(End).End())
+		case Choices:
+			opts, optsTags := node.(Choices).List()
+
+			sec.opts = opts
+			sec.optsTags = optsTags
+		case CanNext:
+			sec.add(node.(CanNext).Render())
+		}
+	}
+	return sec
+}
+
+// ParseFunc of the story
+type ParseFunc func(s *Story, input string) error
+
+// Default story
+func Default() *Story {
+	// parsers = append(parsers, readLine)
+	story := &Story{}
+	return story
 }
