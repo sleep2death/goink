@@ -11,6 +11,7 @@ import (
 type Story struct {
 	start Node
 	end   Node
+
 	c     Node // current obj
 	knots []*knot
 
