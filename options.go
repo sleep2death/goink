@@ -142,6 +142,21 @@ func (c *options) list() (os []*opt) {
 	return os
 }
 
+// List all available options' content
+func (c *options) List() (text []string, tags [][]string) {
+	if opts := c.list(); len(opts) > 0 {
+		for _, opt := range opts {
+			str, tag := opt.List()
+			text = append(text, str)
+			tags = append(tags, tag)
+		}
+
+		return
+	}
+
+	panic(errors.Errorf("no option available: %s", c.Path()))
+}
+
 // choose the option of the choices by index
 func (c *options) choose(idx int) *opt {
 	// filtered options
@@ -153,6 +168,15 @@ func (c *options) choose(idx int) *opt {
 
 	opt := opts[idx]
 	return opt
+}
+
+func (c *options) Select(idx int) (Node, error) {
+	res := c.choose(idx)
+	if res == nil {
+		return nil, errors.Errorf("no option available [%s] at idx: %d", c.Path(), idx)
+	}
+
+	return c.choose(idx), nil
 }
 
 // Opt of the options
@@ -182,6 +206,16 @@ func (o *opt) render(supressing bool) string {
 		return before + after
 	}
 	return o.text
+}
+
+// Render option text with supressing = false
+func (o *opt) Render() (str string, tags []string) {
+	return o.render(false), o.tags
+}
+
+// List option text with supressing = true
+func (o *opt) List() (str string, tags []string) {
+	return o.render(true), o.tags
 }
 
 func (o *opt) parseExprc() error {

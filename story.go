@@ -37,8 +37,8 @@ type Flow interface {
 
 // Choices content - which has one/more option(s)
 type Choices interface {
-	Render(supressing bool) (opts []string, tag []string)
-	Select(idx int) Node
+	List() (text []string, tags [][]string)
+	Select(idx int) (Node, error)
 }
 
 // current content of the story
@@ -91,36 +91,73 @@ func (s *Story) choose(idx int) *opt {
 
 // Save current state of the story
 func (s *Story) Save() *State {
-	return NewState(s)
+	return NewState(s, false)
 }
 
-// Continue the story with the given vars
-func (s *Story) Continue(state *State) (sec *Section, err error) {
+// GoOn the story with the given state
+func (s *Story) GoOn(state *State) (sec *Section, err error) {
 	defer s.mux.Unlock()
 	s.mux.Lock()
 
-	sec = &Section{}
-
-	for s.next() != nil {
-		// t.Log(s.current.Path())
-		switch s.c.(type) {
-		case *line:
-			sec.text += s.c.(*line).render()
-			sec.tags = append(sec.tags, s.c.(*line).tags...)
-			//t.Log(s.c.(*line).Render())
-		case *opt:
-			sec.text += s.c.(*opt).render(false)
-			sec.tags = append(sec.tags, s.c.(*line).tags...)
-			// t.Log(s.c.(*opt).render(false))
-		case *gather:
-			// t.Log(s.c.(*gather).Render())
-		case *options:
-			// t.Log("*", o.render(true))
-		default: //knot or stitch - do nothing
-		}
+	if err := s.Load(state); err != nil {
+		return nil, err
 	}
 
+	sec = &Section{}
+
+	s.goOn(sec)
 	return
+}
+
+// Select the option with the given state
+func (s *Story) Select(state *State, idx int) (sec *Section, err error) {
+	defer s.mux.Unlock()
+	s.mux.Lock()
+
+	if err := s.Load(state); err != nil {
+		return nil, err
+	}
+
+	opts, ok := s.c.(*options)
+	if !ok {
+		return nil, errors.Errorf("current node is not options: %s", s.c.Path())
+	}
+
+	node, err := opts.Select(idx)
+	if err != nil {
+		return nil, err
+	}
+	s.c = node
+
+	sec = &Section{}
+	s.goOn(sec)
+	return
+}
+
+func (s *Story) goOn(sec *Section) {
+loop:
+	for s.c != nil {
+		// t.Log(s.current.Path())
+		switch s.c.(type) {
+		case Flow:
+			str, tag := s.c.(Flow).Render()
+			if len(str) > 0 {
+				sec.text = sec.text + "\n" + str
+			}
+			sec.tags = append(sec.tags, tag...)
+			s.vars[s.c.Path()]++
+			s.c = s.c.(Flow).Next()
+			//t.Log(s.c.(*line).Render())
+		case Choices:
+			opts, tags := s.c.(Choices).List()
+			sec.opts = opts
+			sec.optsTags = tags
+			break loop
+		default: //end of story - do nothing
+			sec.end = true
+			break loop
+		}
+	}
 }
 
 // Load previous state into story
@@ -284,6 +321,8 @@ func NewStory() *Story {
 
 	story.paths = make(map[string]Node)
 	story.vars = make(map[string]int)
+
+	story.paths["r"] = start
 
 	return story
 }
