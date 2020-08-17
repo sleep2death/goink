@@ -84,3 +84,12 @@ func (g *gather) parseLabel() error {
 
 	return nil
 }
+
+// end node of the story
+type end struct {
+	*line
+}
+
+func (e *end) End() (text string, tags []string) {
+	return e.Render()
+}

@@ -10,6 +10,7 @@ import (
 // Story of the ink
 type Story struct {
 	start Node
+	end   Node
 	c     Node // current obj
 	knots []*knot
 
@@ -33,6 +34,10 @@ type Flow interface {
 	SetNext(obj Node)
 
 	Render() (text string, tags []string)
+}
+
+type End interface {
+	End() (text string, tags []string)
 }
 
 // Choices content - which has one/more option(s)
@@ -95,42 +100,44 @@ func (s *Story) Save() *State {
 }
 
 // GoOn the story with the given state
-func (s *Story) GoOn(state *State) (sec *Section, err error) {
+func (s *Story) GoOn(state *State) (update *State, sec *Section, err error) {
 	defer s.mux.Unlock()
 	s.mux.Lock()
 
 	if err := s.Load(state); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	sec = &Section{}
-
 	s.goOn(sec)
+	update = NewState(s, false)
 	return
 }
 
 // Select the option with the given state
-func (s *Story) Select(state *State, idx int) (sec *Section, err error) {
+func (s *Story) Select(state *State, idx int) (update *State, sec *Section, err error) {
 	defer s.mux.Unlock()
 	s.mux.Lock()
 
 	if err := s.Load(state); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	opts, ok := s.c.(*options)
 	if !ok {
-		return nil, errors.Errorf("current node is not options: %s", s.c.Path())
+		return nil, nil, errors.Errorf("current node is not options: %s", s.c.Path())
 	}
 
 	node, err := opts.Select(idx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	s.c = node
 
+	s.c = node
 	sec = &Section{}
 	s.goOn(sec)
+
+	update = NewState(s, false)
 	return
 }
 
@@ -139,6 +146,19 @@ loop:
 	for s.c != nil {
 		// t.Log(s.current.Path())
 		switch s.c.(type) {
+		case End:
+			str, tag := s.c.(End).End()
+			if len(str) > 0 {
+				sec.text = sec.text + "\n" + str
+			}
+			sec.tags = append(sec.tags, tag...)
+			sec.end = true
+			break loop
+		case Choices:
+			opts, tags := s.c.(Choices).List()
+			sec.opts = opts
+			sec.optsTags = tags
+			break loop
 		case Flow:
 			str, tag := s.c.(Flow).Render()
 			if len(str) > 0 {
@@ -148,14 +168,8 @@ loop:
 			s.vars[s.c.Path()]++
 			s.c = s.c.(Flow).Next()
 			//t.Log(s.c.(*line).Render())
-		case Choices:
-			opts, tags := s.c.(Choices).List()
-			sec.opts = opts
-			sec.optsTags = tags
-			break loop
 		default: //end of story - do nothing
-			sec.end = true
-			break loop
+			panic(errors.Errorf("invalid node: %s", s.c.Path()))
 		}
 	}
 }
@@ -218,6 +232,9 @@ func (s *Story) findDivert(path string, obj Node) Node {
 
 	switch len(sp) {
 	case 1: // local label || local stitch || story's knot
+		if strings.ToLower(path) == "end" {
+			return s.end
+		}
 		// local label
 		if kn != nil && st != nil {
 			p := kn.name + SPLIT + st.name + SPLIT + path
@@ -323,6 +340,9 @@ func NewStory() *Story {
 	story.vars = make(map[string]int)
 
 	story.paths["r"] = start
+
+	end := &end{&line{raw: "[end]", path: "end"}}
+	story.end = end
 
 	return story
 }
