@@ -34,6 +34,8 @@ func TestBasicParse(t *testing.T) {
 
 	sec, err := story.Resume(ctx)
 	assert.Nil(t, err)
+
 	assert.Equal(t, true, sec.end)
 	assert.Equal(t, "end", ctx.Current())
+	assert.Equal(t, 5, len(sec.tags)) // 3 + start_tag + end_tag
 }

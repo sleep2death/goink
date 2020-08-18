@@ -51,6 +51,7 @@ type End interface {
 type Choices interface {
 	Select(idx int) (Node, error)
 	List() (text []string, tags [][]string)
+	Nesting() int
 }
 
 // CanNext content - which can go next
@@ -155,7 +156,7 @@ func (s *Story) next() CanNext {
 	return nil
 }
 
-func (s *Story) isChoices() Choices {
+func (s *Story) choices() Choices {
 	if current, ok := s.current.(Choices); ok {
 		return current
 	}
@@ -180,7 +181,7 @@ func (s *Story) visit(path string) error {
 
 // choose from current choices by index
 func (s *Story) choose(idx int) (Node, error) {
-	if c := s.isChoices(); c != nil {
+	if c := s.choices(); c != nil {
 		return c.Select(idx)
 	}
 
