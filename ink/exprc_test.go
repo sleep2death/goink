@@ -38,12 +38,12 @@ func TestNewExprc(t *testing.T) {
 	assert.Nil(t, err)
 	assert.False(t, b)
 
-	b, err = condB.Bool(env)
+	b, _ = condB.Bool(env)
 	assert.False(t, b)
 
 	b, err = condC.Bool(env)
 	assert.NotNil(t, err)
-	// assert.False(t, b)
+	assert.False(t, b)
 
 	b, err = condD.Bool(env)
 	assert.Nil(t, err)

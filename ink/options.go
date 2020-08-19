@@ -9,8 +9,7 @@ import (
 )
 
 var (
-	optsReg  = regexp.MustCompile(`(^(\+\s*)+|^(\*\s*)+)(.+)`)
-	lableReg = regexp.MustCompile(`^\s*\((.+)\)(.*)`)
+	optsReg = regexp.MustCompile(`(^(\+\s*)+|^(\*\s*)+)(.+)`)
 )
 
 // readOption parse and insert a new option into story
@@ -28,6 +27,11 @@ func readOption(s *Story, input string) error {
 		}
 		o := &opt{line: i}
 		o.story = s
+
+		// parsing label
+		if err := i.parseLabel(); err != nil {
+			return err
+		}
 
 		// once-only option
 		if len(res[2]) > 0 {
@@ -55,21 +59,21 @@ func readOption(s *Story, input string) error {
 			}
 		}
 
-		o.path = opts.path + PathSplit + strconv.Itoa(len(opts.opts))
-
+		// if option didn't have label
+		if o.path == "" {
+			o.path = opts.path + PathSplit + strconv.Itoa(len(opts.opts))
+			s.paths[o.path] = o
+		}
 		opts.opts = append(opts.opts, o)
-		s.paths[o.path] = o
 
 		o.parent = opts
 		s.current = o
 
-		// post parsing process
+		// condition exprc parsing
 		if err := o.parseExprc(); err != nil {
 			return err
 		}
-		if err := o.parseLabel(); err != nil {
-			return err
-		}
+
 		return nil
 	}
 
@@ -78,17 +82,10 @@ func readOption(s *Story, input string) error {
 
 func (s *Story) findParentOptions(nesting int) (opts *options, err error) {
 	node := s.current
-	// var gather *Gather
 
 	for node != nil {
-		/*if g, ok := obj.(*gather); ok {
-			if t := nesting - g.nesting; t == 0 {
-				break
-			}
-		}*/
-
 		if c, ok := node.(*options); ok {
-			if t := nesting - c.Nesting(); t >= 0 {
+			if t := nesting - c.nesting; t >= 0 {
 				if t > 1 {
 					return nil, errors.Errorf("wrong nesting of the option: %s", c.Path())
 				} else if t == 0 {
@@ -109,7 +106,7 @@ type options struct {
 	*base
 	opts []*opt
 
-	// gather  *gather
+	gather  *gather
 	nesting int
 }
 
@@ -177,10 +174,6 @@ func (c *options) Pick(idx int) (Node, error) {
 	return res, nil
 }
 
-func (c *options) Nesting() int {
-	return c.nesting
-}
-
 // Opt of the options
 type opt struct {
 	*line
@@ -228,28 +221,6 @@ func (o *opt) parseExprc() error {
 		} else {
 			return err
 		}
-	}
-
-	return nil
-}
-
-func (o *opt) parseLabel() error {
-	if res := lableReg.FindStringSubmatch(o.text); res != nil {
-		label := strings.TrimSpace(res[1])
-		if len(label) > 0 {
-			if knot, stitch := o.story.container(o); stitch != nil {
-				label = stitch.Path() + PathSplit + label
-			} else if knot != nil {
-				label = knot.Path() + PathSplit + label
-			}
-
-			if _, ok := o.story.paths[label]; ok {
-				return errors.Errorf("duplicated label name: %s", label)
-			}
-			o.story.paths[label] = o
-			o.path = label
-		}
-		o.text = res[2]
 	}
 
 	return nil

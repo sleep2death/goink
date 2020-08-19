@@ -53,7 +53,6 @@ type End interface {
 type Choices interface {
 	Pick(idx int) (Node, error)
 	List() (text []string, tags [][]string)
-	Nesting() int
 }
 
 // CanNext content - which can go next
@@ -378,7 +377,7 @@ func (s *start) Next() (Node, error) {
 }
 
 func (s *start) Render() (text string, tags []string) {
-	text = "[start]"
+	// text = "[start]"
 	tags = append(tags, "START")
 	return
 }
@@ -388,14 +387,14 @@ type end struct {
 }
 
 func (e *end) End() (text string, tags []string) {
-	text = "[end]"
+	// text = "[start]"
 	tags = append(tags, "END")
 	return
 }
 
 // Default story
 func Default() *Story {
-	parsers := []ParseFunc{readKnot, readStitch, readOption, readLine}
+	parsers := []ParseFunc{readKnot, readStitch, readOption, readGather, readLine}
 
 	s := &start{base: &base{path: "start"}}
 	e := &end{base: &base{path: "end"}}

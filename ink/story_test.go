@@ -15,7 +15,8 @@ func TestDefaultStory(t *testing.T) {
 
 	sec, err := story.Resume(&ctx)
 	assert.Nil(t, err)
-	assert.Equal(t, "\n[start]\n[end]", sec.text)
+	assert.Equal(t, "", sec.text)
+	assert.Equal(t, 2, len(sec.tags))
 }
 
 func TestBasicParse(t *testing.T) {

@@ -15,6 +15,9 @@ var (
 	glueStartReg = regexp.MustCompile(`^\<\>(.+)`)
 	glueEndReg   = regexp.MustCompile(`(.+)\<\>$`)
 
+	gatherReg    = regexp.MustCompile(`^((-\s*)+)([^>].+)`)
+	labelReg     = regexp.MustCompile(`^\s*\((.+)\)(.*)`)
+	validNameReg = regexp.MustCompile(`^[a-zA-Z_]\w*$`)
 	// illegalGatherReg = regexp.MustCompile(`\-\-\>`)
 )
 
@@ -65,7 +68,7 @@ func newLine(input string) (*line, error) {
 		res = tagReg.FindStringSubmatch(input)
 	}
 	// reverse tag list
-	if len(i.tags) > 0 {
+	if len(i.tags) > 1 {
 		for j, k := 0, len(i.tags)-1; j < k; j, k = j+1, k-1 {
 			i.tags[j], i.tags[k] = i.tags[k], i.tags[j]
 		}
@@ -90,6 +93,9 @@ func newLine(input string) (*line, error) {
 
 	// text | spaces not trimmed
 	i.text = input
+
+	// TODO: exprc parsing
+
 	return i, nil
 }
 
@@ -132,20 +138,105 @@ func (l *line) Next() (Node, error) {
 	}
 
 	// fallback to gather
-	/* p := l.parent
+	p := l.parent
 	for p != nil {
 		if c, ok := p.(*options); ok {
 			if c.gather != nil {
-				return c.gather
+				return c.gather, nil
 			}
 		}
 
 		p = p.Parent()
-	} */
+	}
 
 	return nil, errors.Errorf("current node can not go next: [%s]", l.Path())
 }
 
 func (l *line) Render() (text string, tags []string) {
 	return l.text, l.tags
+}
+
+func (l *line) parseLabel() error {
+	if res := labelReg.FindStringSubmatch(l.text); res != nil {
+		label := strings.TrimSpace(res[1])
+		if len(label) > 0 {
+			if valid := validNameReg.FindString(label); valid == "" {
+				return errors.Errorf("invalid label name: %s", label)
+			}
+
+			if knot, stitch := l.story.container(l); stitch != nil {
+				label = stitch.Path() + PathSplit + label
+			} else if knot != nil {
+				label = knot.Path() + PathSplit + label
+			}
+
+			if _, ok := l.story.paths[label]; ok {
+				return errors.Errorf("conflict label name: %s", label)
+			}
+			l.story.paths[label] = l
+			l.path = label
+		}
+		l.text = res[2]
+	}
+
+	return nil
+}
+
+// readGather create and insert a new gather into story
+func readGather(s *Story, input string) error {
+	res := gatherReg.FindStringSubmatch(input)
+	if res != nil {
+		nesting := len(strings.Join(strings.Fields(res[1]), ""))
+		i, err := newLine(res[3])
+		if err != nil {
+			return err
+		}
+
+		g := &gather{line: i, nesting: nesting}
+		g.story = s
+
+		// parsing label
+		if err := i.parseLabel(); err != nil {
+			return err
+		}
+
+		obj := s.current
+		var choices *options
+		for obj != nil {
+			if c, ok := obj.(*options); ok {
+				if t := nesting - c.nesting; t == 0 {
+					choices = c
+					break
+				}
+			}
+
+			obj = obj.Parent()
+		}
+
+		if choices != nil && choices.gather == nil {
+			// if gather didn't have label
+			// set the default path
+			if g.path == "" {
+				g.path = choices.Path() + PathSplit + "g"
+				s.paths[g.path] = g
+			}
+
+			g.parent = nil // forbid gather from parenting
+
+			choices.gather = g
+			s.current = g
+
+			return nil
+		}
+
+		return errors.Errorf("cannot find the choices of the gather: %s", input)
+	}
+
+	return errNotMatch
+}
+
+// gather node of the choices
+type gather struct {
+	*line
+	nesting int
 }
