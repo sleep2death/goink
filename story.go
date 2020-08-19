@@ -7,19 +7,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Story of the ink
-type Story struct {
-	start Node
-	end   Node
+var (
+	// PathSplit of the node's path
+	PathSplit string = "__"
 
-	c     Node // current obj
-	knots []*knot
-
-	paths map[string]Node
-	vars  map[string]int
-
-	mux sync.Mutex
-}
+	errNotMatch error = errors.New("RegExp Not Match")
+)
 
 // Node is the basic element of a story
 type Node interface {
@@ -29,194 +22,225 @@ type Node interface {
 	Path() string
 }
 
-// Flow content - which can go next
-type Flow interface {
-	Next() Node
-	SetNext(obj Node)
-
-	Render() (text string, tags []string)
+// embeding struct which implements Node
+type base struct {
+	story  *Story
+	parent Node
+	path   string
 }
 
+// Story of the node
+func (b *base) Story() *Story {
+	return b.story
+}
+
+// Parent of the node
+func (b *base) Parent() Node {
+	return b.parent
+}
+
+// Path of the node
+func (b *base) Path() string {
+	return b.path
+}
+
+// End of story
 type End interface {
 	End() (text string, tags []string)
 }
 
 // Choices content - which has one/more option(s)
 type Choices interface {
+	Pick(idx int) (Node, error)
 	List() (text []string, tags [][]string)
-	Select(idx int) (Node, error)
 }
 
-// current content of the story
-func (s *Story) current() Node {
-	return s.c
+// CanNext content - which can go next
+type CanNext interface {
+	Next() (Node, error)
+	SetNext(node Node)
+	Render() (text string, tags []string)
 }
 
-// reset the current content to start
-func (s *Story) reset() {
-	s.c = s.start
-	s.vars = make(map[string]int)
+// Story of the ink
+type Story struct {
+	current Node
+	vars    map[string]interface{}
+
+	start Node
+	end   Node
+
+	paths   map[string]Node
+	parsers []ParseFunc
+
+	knots []*knot
+
+	id  string // story's unique name
+	mux sync.Mutex
 }
 
-// next content of the story
-func (s *Story) next() Node {
-	if current := s.canNext(); current != nil {
-		if n := current.Next(); n != nil {
-			s.c = n
-			s.vars[s.c.Path()]++
+// Resume the story
+func (s *Story) Resume(ctx *Context) (sec *Section, err error) {
+	s.mux.Lock()
+	defer s.mux.Unlock()
 
-			return n
+	if err := s.load(ctx); err != nil {
+		return nil, err
+	}
+
+	if sec, err = s.resume(); err != nil {
+		return nil, err
+	}
+
+	// update ctx
+	*ctx = s.save()
+	return
+}
+
+// Pick the option
+func (s *Story) Pick(ctx *Context, idx int) (sec *Section, err error) {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+
+	if err := s.load(ctx); err != nil {
+		return nil, err
+	}
+
+	sec, err = s.pick(idx)
+	// update ctx
+	*ctx = s.save()
+	return
+}
+
+func (s *Story) SetID(id string) {
+	s.id = id
+}
+
+// resume the story
+func (s *Story) resume() (sec *Section, err error) {
+	var ns nodes
+loop:
+	for {
+		if s.current == nil {
+			return nil, errors.New("current node is nil")
+		}
+
+		ns = append(ns, s.current)
+		if err := s.visit(s.current.Path()); err != nil {
+			return nil, err
+		}
+
+		switch node := s.current.(type) {
+		case End:
+			break loop
+		case Choices:
+			break loop
+		case CanNext:
+			n, err := node.Next()
+			if err != nil {
+				return nil, err
+			}
+			s.current = n
+		default:
+			return nil, errors.Errorf("current node is not recgonized: %s", s.current.Path())
 		}
 	}
 
-	return nil
-	// panic(errors.Errorf("current obj can not go next: %v", s.c))
+	return ns.section(), nil
 }
 
-// next content of the story
-func (s *Story) canNext() Flow {
-	if current, ok := s.c.(Flow); ok {
+// pick one of the current choices' option,
+// and resume
+func (s *Story) pick(idx int) (sec *Section, err error) {
+	var opt Node
+	if c := s.choices(); c != nil {
+		if opt, err = c.Pick(idx); err != nil {
+			return nil, err
+		}
+		s.current = opt
+		return s.resume()
+	}
+
+	return nil, errors.Errorf("%s is not [Choices]", s.current.Path())
+}
+
+func (s *Story) next() CanNext {
+	if current, ok := s.current.(CanNext); ok {
 		return current
 	}
 
 	return nil
 }
 
-// choose the option of the current choices
-func (s *Story) choose(idx int) *opt {
-	if c, ok := s.c.(*options); ok {
-		if opt := c.choose(idx); opt != nil {
-			s.c = opt
-			s.vars[opt.Path()]++
-			return opt
-		}
+func (s *Story) choices() Choices {
+	if current, ok := s.current.(Choices); ok {
+		return current
 	}
 
 	return nil
 }
 
-// Save current state of the story
-func (s *Story) Save() *State {
-	return NewState(s, false)
-}
-
-// GoOn the story with the given state
-func (s *Story) GoOn(state *State) (update *State, sec *Section, err error) {
-	defer s.mux.Unlock()
-	s.mux.Lock()
-
-	if err := s.Load(state); err != nil {
-		return nil, nil, err
+// add visit count to the given path
+func (s *Story) visit(path string) error {
+	if v, ok := s.vars[path]; ok {
+		if n, ok := v.(int); ok {
+			n++
+			s.vars[path] = n
+		} else {
+			return errors.Errorf("variable: <%s> is not type of int", path)
+		}
 	}
 
-	sec = &Section{}
-	s.goOn(sec)
-	update = NewState(s, false)
-	return
+	s.vars[path] = 1
+	return nil
 }
 
-// Select the option with the given state
-func (s *Story) Select(state *State, idx int) (update *State, sec *Section, err error) {
-	defer s.mux.Unlock()
-	s.mux.Lock()
-
-	if err := s.Load(state); err != nil {
-		return nil, nil, err
-	}
-
-	opts, ok := s.c.(*options)
+// load from context
+func (s *Story) load(ctx *Context) error {
+	n, ok := s.paths[ctx.current]
 	if !ok {
-		return nil, nil, errors.Errorf("current node is not options: %s", s.c.Path())
+		return errors.Errorf("current path [%s] is not existed", ctx.current)
 	}
 
-	node, err := opts.Select(idx)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	s.c = node
-	sec = &Section{}
-	s.goOn(sec)
-
-	update = NewState(s, false)
-	return
-}
-
-func (s *Story) goOn(sec *Section) {
-loop:
-	for s.c != nil {
-		// t.Log(s.current.Path())
-		switch s.c.(type) {
-		case End:
-			str, tag := s.c.(End).End()
-			if len(str) > 0 {
-				sec.text = sec.text + "\n" + str
-			}
-			sec.tags = append(sec.tags, tag...)
-			sec.end = true
-			break loop
-		case Choices:
-			opts, tags := s.c.(Choices).List()
-			sec.opts = opts
-			sec.optsTags = tags
-			break loop
-		case Flow:
-			str, tag := s.c.(Flow).Render()
-			if len(str) > 0 {
-				sec.text = sec.text + "\n" + str
-			}
-			sec.tags = append(sec.tags, tag...)
-			s.vars[s.c.Path()]++
-			s.c = s.c.(Flow).Next()
-			//t.Log(s.c.(*line).Render())
-		default: //end of story - do nothing
-			panic(errors.Errorf("invalid node: %s", s.c.Path()))
-		}
-	}
-}
-
-// Load previous state into story
-func (s *Story) Load(state *State) error {
-	if obj, ok := s.paths[state.path]; ok {
-		s.c = obj
-	} else {
-		return errors.Errorf("cannot find the obj: %s", state.path)
-	}
-
-	// copy all non-zero count into story's count
-	for k, v := range state.count {
-		s.vars[k] = v
-	}
-
+	s.current = n
+	s.vars = ctx.vars
 	return nil
 }
 
-// find container of the current inkObj
-func (s *Story) findContainer(obj Node) (*knot, *Stitch) {
-	for obj != nil {
-		if st, ok := obj.(*Stitch); ok {
-			return st.k, st
-		} else if k, ok := obj.(*knot); ok {
+func (s *Story) save() Context {
+	return Context{current: s.current.Path(), vars: copy(s.vars)}
+}
+
+func copy(m map[string]interface{}) map[string]interface{} {
+	cp := make(map[string]interface{})
+	for k, v := range m {
+		vm, ok := v.(map[string]interface{})
+		if ok {
+			cp[k] = copy(vm)
+		} else {
+			cp[k] = v
+		}
+	}
+
+	return cp
+}
+
+// container of the current node
+func (s *Story) container(node Node) (*knot, *stitch) {
+	for node != nil {
+		if st, ok := node.(*stitch); ok {
+			return st.knot, st
+		} else if k, ok := node.(*knot); ok {
 			return k, nil
 		}
-		obj = obj.Parent()
+		node = node.Parent()
 	}
 
 	return nil, nil
 }
 
-// find divert count in the given path
-func (s *Story) findDivertCount(path string, obj Node) int {
-	if res := s.findDivert(path, obj); res != nil {
-		if count, ok := s.vars[res.Path()]; ok {
-			return count
-		}
-	}
-	return 0
-}
-
 // find knot of the story by name
-func (s *Story) findKnot(name string) *knot {
+func (s *Story) knot(name string) *knot {
 	if k, ok := s.paths[name]; ok {
 		if kn, b := k.(*knot); b {
 			return kn
@@ -226,10 +250,9 @@ func (s *Story) findKnot(name string) *knot {
 	return nil
 }
 
-// find divert in the given path
-func (s *Story) findDivert(path string, obj Node) Node {
+func (s *Story) divert(path string, from Node) Node {
 	sp := strings.Split(path, ".")
-	kn, st := s.findContainer(obj)
+	kn, st := s.container(from)
 
 	switch len(sp) {
 	case 1: // local label || local stitch || story's knot
@@ -238,112 +261,184 @@ func (s *Story) findDivert(path string, obj Node) Node {
 		}
 		// local label
 		if kn != nil && st != nil {
-			p := kn.name + SPLIT + st.name + SPLIT + path
+			p := kn.name + PathSplit + st.name + PathSplit + path
 			if s.paths[p] != nil {
 				return s.paths[p]
 			}
 		}
 		// find local stitch
-		if kn != nil && kn.findStitch(path) != nil {
-			return kn.findStitch(path)
+		if kn != nil && kn.stitch(path) != nil {
+			return kn.stitch(path)
 		}
 		// global knot
-		if s.findKnot(path) != nil {
-			return s.findKnot(path)
+		if s.knot(path) != nil {
+			return s.knot(path)
 		}
 	case 2: // local stitch.label || knot.stitch
 		if kn != nil {
-			p := regReplaceDot.ReplaceAllString(path, SPLIT+"$1")
-			p = kn.name + SPLIT + p
+			p := regReplaceDot.ReplaceAllString(path, PathSplit+"$1")
+			p = kn.name + PathSplit + p
 			if s.paths[p] != nil {
 				return s.paths[p]
 			}
 		}
-		if k := s.findKnot(sp[0]); k != nil {
-			return k.findStitch(sp[1])
+		if k := s.knot(sp[0]); k != nil {
+			return k.stitch(sp[1])
 		}
 	default: // could be - knot.stitch.label
-		p := regReplaceDot.ReplaceAllString(path, SPLIT+"$1")
+		p := regReplaceDot.ReplaceAllString(path, PathSplit+"$1")
 		// fmt.Println(path)
 		return s.paths[p]
 	}
 	return nil
 }
 
-// parse single line input into story's content
-func (s *Story) parseLine(input string) error {
-	// trim spaces and skip empty lines
-	input = strings.TrimRight(strings.TrimSpace(input), "\r\n")
-	if len(input) == 0 {
-		return nil
+// Context of the story
+type Context struct {
+	current string
+	vars    map[string]interface{}
+}
+
+// NewContext which starts from beginning with empty vars
+func NewContext() *Context {
+	return &Context{
+		current: "start",
+		vars:    make(map[string]interface{}),
+	}
+}
+
+// Current path of the story
+func (c *Context) Current() string {
+	return c.current
+}
+
+// Vars of the story
+func (c *Context) Vars() map[string]interface{} {
+	return c.vars
+}
+
+// Section is rendered result of current story
+type Section struct {
+	text string
+	tags []string
+
+	opts     []string
+	optsTags [][]string
+
+	end bool
+}
+
+func (s *Section) add(text string, tags []string) {
+	if len(text) > 0 {
+		s.text = s.text + "\n" + text
 	}
 
-	for _, parser := range parsers {
-		if err := parser(s, input); err != nil {
-			if err != ErrNotMatch {
-				return err
-			}
-		} else {
-			return nil
+	s.tags = append(s.tags, tags...)
+}
+
+// Nodes list
+type nodes []Node
+
+// NewSection creates the rendered result of the nodes
+func (n nodes) section() *Section {
+	sec := &Section{}
+	for _, node := range n {
+		switch node := node.(type) {
+		case End:
+			sec.end = true
+			sec.add(node.End())
+		case Choices:
+			opts, optsTags := node.List()
+
+			sec.opts = opts
+			sec.optsTags = optsTags
+		case CanNext:
+			sec.add(node.Render())
 		}
 	}
-
-	return nil
+	return sec
 }
 
-func (s *Story) setNext(obj Node) {
-	if current := s.canNext(); current != nil {
-		current.SetNext(obj)
-		s.c = obj
-	} else {
-		panic(errors.Errorf("current obj can not set next: %v", s.c))
+type start struct {
+	*base
+	next Node
+}
+
+func (s *start) SetNext(n Node) {
+	s.next = n
+}
+
+func (s *start) Next() (Node, error) {
+	if s.next == nil {
+		return nil, errors.New("current node can not go next: [start]")
 	}
+
+	return s.next, nil
 }
 
-// ErrNotMatch the regexp error
-var ErrNotMatch error = errors.New("RegExp Not Match")
+func (s *start) Render() (text string, tags []string) {
+	// text = "[start]"
+	tags = append(tags, "START")
+	return
+}
+
+type end struct {
+	*base
+}
+
+func (e *end) End() (text string, tags []string) {
+	// text = "[start]"
+	tags = append(tags, "END")
+	return
+}
+
+// Default story
+func Default() *Story {
+	parsers := []ParseFunc{readKnot, readStitch, readOption, readGather, readLine}
+
+	s := &start{base: &base{path: "start"}}
+	e := &end{base: &base{path: "end"}}
+	s.SetNext(e)
+
+	story := &Story{start: s, end: e, parsers: parsers}
+
+	s.story = story
+	e.story = story
+
+	story.paths = make(map[string]Node)
+	story.vars = make(map[string]interface{})
+
+	story.paths["start"] = s
+	story.paths["end"] = e
+
+	story.current = s
+	return story
+}
 
 // ParseFunc of the story
 type ParseFunc func(s *Story, input string) error
 
-var parsers []ParseFunc
-
-// SPLIT of the path
-const SPLIT string = "__"
-
-// Parse lines of ink file into new story
-func Parse(input string) (*Story, error) {
+// Parse the input text
+func (s *Story) Parse(input string) error {
 	contents := strings.Split(input, "\n")
-
-	s := NewStory()
-
 	for _, line := range contents {
-		if err := s.parseLine(line); err != nil {
-			return nil, err
+		// trim spaces and skip empty lines
+		l := strings.TrimRight(strings.TrimSpace(line), "\r\n")
+		if len(l) == 0 {
+			continue
+		}
+
+		// passing raw input into parsers
+		for _, parser := range s.parsers {
+			if err := parser(s, l); err != nil {
+				if err != errNotMatch {
+					return err
+				}
+			} else {
+				break
+			}
 		}
 	}
 
-	s.reset()
-	return s, nil
-}
-
-// NewStory create an empty story instance
-func NewStory() *Story {
-	// Inline always be the last parser
-	parsers = append(parsers, readKnot, readStitch, readOption, readGather, readLine)
-
-	start := &line{raw: "[start]", path: "r"}
-
-	story := &Story{start: start}
-	story.c = story.start
-
-	story.paths = make(map[string]Node)
-	story.vars = make(map[string]int)
-
-	story.paths["r"] = start
-
-	end := &end{&line{raw: "[end]", path: "end"}}
-	story.end = end
-
-	return story
+	return nil
 }

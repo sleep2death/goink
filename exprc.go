@@ -20,7 +20,7 @@ type exprc struct {
 // newExprc creates a condition with the given expr
 func newExprc(code string) (*exprc, error) {
 	cond := &exprc{raw: code}
-	c := regReplaceDot.ReplaceAllString(code, SPLIT+"$1")
+	c := regReplaceDot.ReplaceAllString(code, PathSplit+"$1")
 
 	program, err := expr.Compile(c, expr.Env(nil))
 
@@ -33,7 +33,7 @@ func newExprc(code string) (*exprc, error) {
 }
 
 // Bool return the exprc result as bool value
-func (c *exprc) Bool(count map[string]int) (bool, error) {
+func (c *exprc) Bool(count map[string]interface{}) (bool, error) {
 	output, err := expr.Run(c.program, count)
 	if err != nil {
 		return false, err

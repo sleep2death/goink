@@ -1,159 +1,158 @@
 package goink
 
 import (
-	"math/rand"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestInlineParse(t *testing.T) {
-	s := NewStory()
+func TestLineParsing(t *testing.T) {
+	input := `
+	this is a basic line parsing test: # tag a # tag b#tag c
+	<> sentence No.1 <>
+	sentence No.2 -> End // comments...
+	`
 
-	err := readLine(s, "--> Divert")
+	story := Default()
+	err := story.Parse(input)
+	assert.Nil(t, err)
+
+	ctx := NewContext()
+	sec, err := story.Resume(ctx)
+	assert.Nil(t, err)
+	assert.Contains(t, sec.text, "No.2")
+
+	l1, _ := story.paths["start__i"].(*line)
+	assert.Equal(t, 3, len(l1.tags))
+	assert.Equal(t, "tag a", l1.tags[0])
+
+	l2, ok := story.paths["start__i__i"].(*line)
+	assert.True(t, ok)
+	assert.True(t, l2.glueStart)
+	assert.True(t, l2.glueEnd)
+}
+
+func TestLabelParsing(t *testing.T) {
+	input := `
+	* (label) Opt A
+	  opt a content
+	* Opt B
+	* Opt C
+	- (gather) gather -> END
+	`
+
+	story := Default()
+	err := story.Parse(input)
+	assert.Nil(t, err)
+
+	opts, ok := story.paths["start__c"].(*options)
+	assert.True(t, ok)
+	assert.Equal(t, "label", opts.opts[0].path)
+	assert.Equal(t, "gather", opts.gather.path)
+
+	input = `
+	* (illegal label) Opt A
+	  opt a content
+	* Opt B
+	* Opt C
+	- (gather) gather -> END
+	`
+	story = Default()
+	err = story.Parse(input)
 	assert.NotNil(t, err)
 
-	err = readLine(s, "-> Divert")
+	input = `
+	-> knot_a
+	== knot_a
+		* (label) Opt A
+		  opt a content
+		* Opt B -> knot_b.stitch_a
+		* Opt C
+		- (gather) gather -> END
+	== knot_b
+		knot b content
+		-> stitch_a
+		= stitch_a
+			stitch content here...
+			* (label)Opt A
+			  -> END
+			* Opt B
+			* Opt C
+	`
+	story = Default()
+	err = story.Parse(input)
 	assert.Nil(t, err)
-	assert.Equal(t, "Divert", s.c.(*line).divert)
 
-	err = readLine(s, "This is a content. -> Divert #Tag A # TagB // Comment")
+	ctx := NewContext()
+	sec, err := story.Resume(ctx)
 	assert.Nil(t, err)
-	assert.Equal(t, "Divert", s.c.(*line).divert)
-	assert.Equal(t, "TagB", s.c.(*line).tags[1])
-	assert.Equal(t, "Tag A", s.c.(*line).tags[0])
-	assert.Equal(t, s, s.c.(*line).Story())
-	assert.True(t, len(s.c.(*line).comment) > 0)
-}
+	assert.Equal(t, 3, len(sec.opts))
 
-func TestDivert(t *testing.T) {
-	input := `
-	Hello, world!
-	-> Knot_A
+	sec, err = story.Pick(ctx, 1)
+	assert.Nil(t, err)
+	assert.NotContains(t, sec.text, "knot b")
+	assert.Contains(t, sec.text, "stitch content")
 
-	== Knot_A
-	* Option A
-		** Option A.1
-		** Option A.2
-		-- Gather A
-		   Gather A content -> Stitch_A_a
-	= Stitch_A_a
-		* Option B
-		* Option C
-		- Final Gather A -> Knot_B.Stitch_B_b
-	== Knot_B
-	* Option B
-		** Option B.1 -> Stitch_B_b
-		** Option B.2
-		-- Gather B  -> Stitch_B_b
-	= Stitch_B_b
-		* Option B
-		* Option C
-		- Final Gather B
-	`
-	s, err := Parse(input)
+	_, err = story.Pick(ctx, 0)
+	assert.Nil(t, err)
 
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	opt, ok := story.paths["knot_b__stitch_a__i__c__0"]
+	assert.True(t, ok)
+	assert.Equal(t, "knot_b__stitch_a__label", opt.Path())
 
-	rand.Seed(time.Now().UnixNano())
-
-	for s.next() != nil {
-		switch s.c.(type) {
-		case *line:
-			t.Log(s.c.(*line).render())
-		case *opt:
-			t.Log(s.c.(*opt).render(true))
-		case *gather:
-			t.Log(s.c.(*gather).render())
-		case *options:
-			for _, o := range s.c.(*options).list() {
-				t.Log("*", o.render(true))
-			}
-
-			// random select
-			idx := rand.Intn(len(s.c.(*options).list()))
-			s.choose(idx)
-			t.Logf("Select [%d]", idx)
-		}
-	}
-
-	assert.Equal(t, "Final Gather B", s.c.(*gather).raw)
-}
-
-func TestGlueParse(t *testing.T) {
-	input := `
-	Glue Test 1
-	<>Glue Test 2
-	Glue Test 3 <>
-	<>Glue Test 4<>
+	input = `
+	* (duplicated_label) Opt A
+	  opt a content
+	* (duplicated_label)Opt B -> knot_b.stitch_a
+	* Opt C
+	- (gather) gather -> END
 	`
 
-	s, err := Parse(input)
-
-	if err != nil {
-		t.Error(err)
-		return
-	}
-
-	s.next()
-	s.next()
-
-	assert.True(t, s.current().(*line).glueStart)
-	assert.False(t, s.current().(*line).glueEnd)
-
-	s.next()
-	assert.True(t, s.current().(*line).glueEnd)
-	assert.False(t, s.current().(*line).glueStart)
-
-	s.next()
-	assert.True(t, s.current().(*line).glueEnd)
-	assert.True(t, s.current().(*line).glueStart)
+	story = Default()
+	err = story.Parse(input)
+	assert.NotNil(t, err)
 }
 
-func TestDivertNavigation(t *testing.T) {
+func TestDivertParsing(t *testing.T) {
 	input := `
-	-> Knot_A.stitch_b.lable_g
-	== Knot_A
-	This is Knot A.
-	= stitch_b
-	This is stitch b. -> stitch_c.lable_g
-	* opt a
-	+ opt b
-	- (lable_g) gather -> stitch_b
-	= stitch_c
-	+ (lable_o) opt a -> unkown-divert
-	+ opt b
-	- (lable_g) gather c-> lable_o
+	go to invalid divert -> divert
 	`
 
-	s, err := Parse(input)
+	story := Default()
+	err := story.Parse(input)
+	assert.Nil(t, err)
 
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	ctx := NewContext()
+	_, err = story.Resume(ctx)
+	assert.Equal(t, "can not find the divert: <divert>", err.Error())
 
-	s.next()
-	s.next()
-	assert.Equal(t, " gather ", s.current().(*gather).render())
+	input = `
+	go to invalid divert -> invalid divert
+	`
 
-	s.next()
-	assert.Equal(t, "stitch_b", s.current().(*Stitch).name)
+	story = Default()
+	err = story.Parse(input)
+	assert.NotNil(t, err)
 
-	s.next()
-	s.next()
-	assert.Equal(t, " gather c", s.current().(*gather).render())
+	input = `
+	go to invalid divert -> invalid.divert..
+	`
 
-	s.next()
-	assert.Equal(t, " opt a ", s.current().(*opt).render(false))
+	story = Default()
+	err = story.Parse(input)
+	assert.NotNil(t, err)
+}
 
-	pf := assert.PanicTestFunc(func() {
-		s.next()
-	})
+func TestDivertJumping(t *testing.T) {
+	input := `
+	no next node available
+	`
 
-	assert.Panics(t, pf)
+	story := Default()
+	err := story.Parse(input)
+	assert.Nil(t, err)
+
+	ctx := NewContext()
+	_, err = story.Resume(ctx)
+	assert.NotNil(t, err)
 }
