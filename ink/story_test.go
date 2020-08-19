@@ -29,8 +29,7 @@ func TestBasicParse(t *testing.T) {
 	err := story.Parse(input)
 	assert.Nil(t, err)
 
-	ctx := &Context{current: "start"}
-	ctx.vars = make(map[string]interface{})
+	ctx := NewContext()
 
 	sec, err := story.Resume(ctx)
 	assert.Nil(t, err)

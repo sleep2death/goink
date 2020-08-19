@@ -8,20 +8,24 @@ import (
 	"github.com/pkg/errors"
 )
 
-var optsReg = regexp.MustCompile(`(^(\+\s*)+|^(\*\s*)+)(.+)`)
+var (
+	optsReg  = regexp.MustCompile(`(^(\+\s*)+|^(\*\s*)+)(.+)`)
+	lableReg = regexp.MustCompile(`^\s*\((.+)\)(.*)`)
+)
 
 // readOption parse and insert a new option into story
 func readOption(s *Story, input string) error {
 	res := optsReg.FindStringSubmatch(input)
 
 	if res != nil {
+		// findout nesting num
 		nesting := len(strings.Join(strings.Fields(res[1]), ""))
 
+		// create new option
 		i, err := newLine(res[4])
 		if err != nil {
 			return err
 		}
-
 		o := &opt{line: i}
 		o.story = s
 
@@ -39,7 +43,7 @@ func readOption(s *Story, input string) error {
 		}
 
 		if opts == nil {
-			opts = &options{story: s, parent: s.current, nesting: nesting}
+			opts = &options{base: &base{story: s, parent: s.current}, nesting: nesting}
 
 			opts.path = s.current.Path() + PathSplit + "c"
 			s.paths[opts.path] = opts
@@ -63,13 +67,13 @@ func readOption(s *Story, input string) error {
 		if err := o.parseExprc(); err != nil {
 			return err
 		}
-		/* if err := o.parseLabel(); err != nil {
+		if err := o.parseLabel(); err != nil {
 			return err
-		}*/
+		}
 		return nil
 	}
 
-	return ErrNotMatch
+	return errNotMatch
 }
 
 func (s *Story) findParentOptions(nesting int) (opts *options, err error) {
@@ -102,28 +106,11 @@ func (s *Story) findParentOptions(nesting int) (opts *options, err error) {
 
 // options of the story
 type options struct {
-	story  *Story
-	parent Node
-	opts   []*opt
-	path   string
+	*base
+	opts []*opt
 
 	// gather  *gather
 	nesting int
-}
-
-// Story of the choices
-func (c *options) Story() *Story {
-	return c.story
-}
-
-// Path of the choices
-func (c *options) Path() string {
-	return c.path
-}
-
-// Parent of the choices
-func (c *options) Parent() Node {
-	return c.parent
 }
 
 // options of the choices
@@ -168,8 +155,7 @@ func (c *options) List() (text []string, tags [][]string) {
 	panic(errors.Errorf("no option available: %s", c.Path()))
 }
 
-// choose the option of the choices by index
-func (c *options) choose(idx int) *opt {
+func (c *options) pick(idx int) *opt {
 	// filtered options
 	opts := c.list()
 
@@ -181,13 +167,14 @@ func (c *options) choose(idx int) *opt {
 	return opt
 }
 
-func (c *options) Select(idx int) (Node, error) {
-	res := c.choose(idx)
+// Pick the option of the choices by index
+func (c *options) Pick(idx int) (Node, error) {
+	res := c.pick(idx)
 	if res == nil {
 		return nil, errors.Errorf("no option available [%s] at idx: %d", c.Path(), idx)
 	}
 
-	return c.choose(idx), nil
+	return res, nil
 }
 
 func (c *options) Nesting() int {
@@ -223,7 +210,7 @@ func (o *opt) render(supressing bool) string {
 	return o.text
 }
 
-// Render option text with supressing = false
+// Render option text without supressing
 func (o *opt) Render() (str string, tags []string) {
 	return o.render(false), o.tags
 }
@@ -246,18 +233,18 @@ func (o *opt) parseExprc() error {
 	return nil
 }
 
-/* func (o *opt) parseLabel() error {
+func (o *opt) parseLabel() error {
 	if res := lableReg.FindStringSubmatch(o.text); res != nil {
 		label := strings.TrimSpace(res[1])
 		if len(label) > 0 {
-			if knot, stitch := o.story.findContainer(o); stitch != nil {
+			if knot, stitch := o.story.container(o); stitch != nil {
 				label = stitch.Path() + PathSplit + label
 			} else if knot != nil {
 				label = knot.Path() + PathSplit + label
 			}
 
 			if _, ok := o.story.paths[label]; ok {
-				return errors.Errorf("duplicated label: %s", label)
+				return errors.Errorf("duplicated label name: %s", label)
 			}
 			o.story.paths[label] = o
 			o.path = label
@@ -266,4 +253,4 @@ func (o *opt) parseExprc() error {
 	}
 
 	return nil
-} */
+}

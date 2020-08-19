@@ -15,8 +15,7 @@ var (
 	glueStartReg = regexp.MustCompile(`^\<\>(.+)`)
 	glueEndReg   = regexp.MustCompile(`(.+)\<\>$`)
 
-	lableReg         = regexp.MustCompile(`^\s*\((.+)\)(.*)`)
-	illegalGatherReg = regexp.MustCompile(`\-\-\>`)
+	// illegalGatherReg = regexp.MustCompile(`\-\-\>`)
 )
 
 // readLine parse and insert a new inline into story

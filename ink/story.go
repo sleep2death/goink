@@ -8,12 +8,10 @@ import (
 )
 
 var (
-	ErrNotMatch error = errors.New("RegExp Not Match")
-)
-
-const (
-	// PathSplit sign of the path
+	// PathSplit of the node's path
 	PathSplit string = "__"
+
+	errNotMatch error = errors.New("RegExp Not Match")
 )
 
 // Node is the basic element of a story
@@ -24,20 +22,24 @@ type Node interface {
 	Path() string
 }
 
+// embeding struct which implements Node
 type base struct {
 	story  *Story
 	parent Node
 	path   string
 }
 
+// Story of the node
 func (b *base) Story() *Story {
 	return b.story
 }
 
+// Parent of the node
 func (b *base) Parent() Node {
 	return b.parent
 }
 
+// Path of the node
 func (b *base) Path() string {
 	return b.path
 }
@@ -49,7 +51,7 @@ type End interface {
 
 // Choices content - which has one/more option(s)
 type Choices interface {
-	Select(idx int) (Node, error)
+	Pick(idx int) (Node, error)
 	List() (text []string, tags [][]string)
 	Nesting() int
 }
@@ -72,6 +74,9 @@ type Story struct {
 	paths   map[string]Node
 	parsers []ParseFunc
 
+	knots []*knot
+
+	id  string // story's unique name
 	mux sync.Mutex
 }
 
@@ -104,16 +109,20 @@ func (s *Story) Pick(ctx *Context, idx int) (sec *Section, err error) {
 	return s.pick(idx)
 }
 
+func (s *Story) SetID(id string) {
+	s.id = id
+}
+
 // resume the story
 func (s *Story) resume() (sec *Section, err error) {
-	var nodes Nodes
+	var ns nodes
 loop:
 	for {
 		if s.current == nil {
 			return nil, errors.New("current node is nil")
 		}
 
-		nodes = append(nodes, s.current)
+		ns = append(ns, s.current)
 		if err := s.visit(s.current.Path()); err != nil {
 			return nil, err
 		}
@@ -134,18 +143,22 @@ loop:
 		}
 	}
 
-	return nodes.NewSection(), nil
+	return ns.section(), nil
 }
 
 // pick one of the current choices' option,
 // and resume
 func (s *Story) pick(idx int) (sec *Section, err error) {
-	c, err := s.choose(idx)
-	if err != nil {
-		return nil, err
+	var opt Node
+	if c := s.choices(); c != nil {
+		if opt, err = c.Pick(idx); err != nil {
+			return nil, err
+		}
+		s.current = opt
+		return s.resume()
 	}
-	s.current = c
-	return s.resume()
+
+	return nil, errors.Errorf("%s is not [Choices]", s.current.Path())
 }
 
 func (s *Story) next() CanNext {
@@ -171,21 +184,12 @@ func (s *Story) visit(path string) error {
 			n++
 			s.vars[path] = n
 		} else {
-			return errors.Errorf("'%s' is not [int]", path)
+			return errors.Errorf("variable: <%s> is not type of int", path)
 		}
 	}
 
 	s.vars[path] = 1
 	return nil
-}
-
-// choose from current choices by index
-func (s *Story) choose(idx int) (Node, error) {
-	if c := s.choices(); c != nil {
-		return c.Select(idx)
-	}
-
-	return nil, errors.Errorf("%s is not [Choices]", s.current.Path())
 }
 
 // load from context
@@ -201,15 +205,15 @@ func (s *Story) load(ctx *Context) error {
 }
 
 func (s *Story) save() Context {
-	return Context{current: s.current.Path(), vars: copyMap(s.vars)}
+	return Context{current: s.current.Path(), vars: copy(s.vars)}
 }
 
-func copyMap(m map[string]interface{}) map[string]interface{} {
+func copy(m map[string]interface{}) map[string]interface{} {
 	cp := make(map[string]interface{})
 	for k, v := range m {
 		vm, ok := v.(map[string]interface{})
 		if ok {
-			cp[k] = copyMap(vm)
+			cp[k] = copy(vm)
 		} else {
 			cp[k] = v
 		}
@@ -218,10 +222,70 @@ func copyMap(m map[string]interface{}) map[string]interface{} {
 	return cp
 }
 
+// container of the current node
+func (s *Story) container(node Node) (*knot, *stitch) {
+	for node != nil {
+		if st, ok := node.(*stitch); ok {
+			return st.knot, st
+		} else if k, ok := node.(*knot); ok {
+			return k, nil
+		}
+		node = node.Parent()
+	}
+
+	return nil, nil
+}
+
+// find knot of the story by name
+func (s *Story) knot(name string) *knot {
+	if k, ok := s.paths[name]; ok {
+		if kn, b := k.(*knot); b {
+			return kn
+		}
+	}
+
+	return nil
+}
+
 func (s *Story) divert(path string, from Node) Node {
 	sp := strings.Split(path, ".")
-	if len(sp) == 1 {
-		return s.paths[path]
+	kn, st := s.container(from)
+
+	switch len(sp) {
+	case 1: // local label || local stitch || story's knot
+		if strings.ToLower(path) == "end" {
+			return s.end
+		}
+		// local label
+		if kn != nil && st != nil {
+			p := kn.name + PathSplit + st.name + PathSplit + path
+			if s.paths[p] != nil {
+				return s.paths[p]
+			}
+		}
+		// find local stitch
+		if kn != nil && kn.stitch(path) != nil {
+			return kn.stitch(path)
+		}
+		// global knot
+		if s.knot(path) != nil {
+			return s.knot(path)
+		}
+	case 2: // local stitch.label || knot.stitch
+		if kn != nil {
+			p := regReplaceDot.ReplaceAllString(path, PathSplit+"$1")
+			p = kn.name + PathSplit + p
+			if s.paths[p] != nil {
+				return s.paths[p]
+			}
+		}
+		if k := s.knot(sp[0]); k != nil {
+			return k.stitch(sp[1])
+		}
+	default: // could be - knot.stitch.label
+		p := regReplaceDot.ReplaceAllString(path, PathSplit+"$1")
+		// fmt.Println(path)
+		return s.paths[p]
 	}
 	return nil
 }
@@ -230,6 +294,14 @@ func (s *Story) divert(path string, from Node) Node {
 type Context struct {
 	current string
 	vars    map[string]interface{}
+}
+
+// NewContext which starts from beginning with empty vars
+func NewContext() *Context {
+	return &Context{
+		current: "start",
+		vars:    make(map[string]interface{}),
+	}
 }
 
 // Current path of the story
@@ -262,10 +334,10 @@ func (s *Section) add(text string, tags []string) {
 }
 
 // Nodes list
-type Nodes []Node
+type nodes []Node
 
 // NewSection creates the rendered result of the nodes
-func (n Nodes) NewSection() *Section {
+func (n nodes) section() *Section {
 	sec := &Section{}
 	for _, node := range n {
 		switch node := node.(type) {
@@ -319,7 +391,7 @@ func (e *end) End() (text string, tags []string) {
 
 // Default story
 func Default() *Story {
-	parsers := []ParseFunc{readLine}
+	parsers := []ParseFunc{readKnot, readStitch, readOption, readLine}
 
 	s := &start{base: &base{path: "start"}}
 	e := &end{base: &base{path: "end"}}
@@ -343,6 +415,7 @@ func Default() *Story {
 // ParseFunc of the story
 type ParseFunc func(s *Story, input string) error
 
+// Parse the input text
 func (s *Story) Parse(input string) error {
 	contents := strings.Split(input, "\n")
 	for _, line := range contents {
@@ -355,11 +428,11 @@ func (s *Story) Parse(input string) error {
 		// passing raw input into parsers
 		for _, parser := range s.parsers {
 			if err := parser(s, l); err != nil {
-				if err != ErrNotMatch {
+				if err != errNotMatch {
 					return err
 				}
 			} else {
-				continue
+				break
 			}
 		}
 	}
