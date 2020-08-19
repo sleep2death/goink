@@ -200,22 +200,17 @@ func readGather(s *Story, input string) error {
 		g := &gather{line: i, nesting: nesting}
 		g.story = s
 
-		// parsing label
-		if err := i.parseLabel(); err != nil {
-			return err
-		}
-
-		obj := s.current
+		node := s.current
 		var choices *options
-		for obj != nil {
-			if c, ok := obj.(*options); ok {
+		for node != nil {
+			if c, ok := node.(*options); ok {
 				if t := nesting - c.nesting; t == 0 {
 					choices = c
 					break
 				}
 			}
 
-			obj = obj.Parent()
+			node = node.Parent()
 		}
 
 		if choices != nil && choices.gather == nil {
@@ -230,6 +225,11 @@ func readGather(s *Story, input string) error {
 
 			choices.gather = g
 			s.current = g
+
+			// parsing label
+			if err := i.parseLabel(); err != nil {
+				return err
+			}
 
 			return nil
 		}

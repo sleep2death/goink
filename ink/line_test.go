@@ -99,6 +99,18 @@ func TestLabelParsing(t *testing.T) {
 	opt, ok := story.paths["knot_b__stitch_a__i__c__0"]
 	assert.True(t, ok)
 	assert.Equal(t, "knot_b__stitch_a__label", opt.Path())
+
+	input = `
+	* (duplicated_label) Opt A
+	  opt a content
+	* (duplicated_label)Opt B -> knot_b.stitch_a
+	* Opt C
+	- (gather) gather -> END
+	`
+
+	story = Default()
+	err = story.Parse(input)
+	assert.NotNil(t, err)
 }
 
 func TestDivertParsing(t *testing.T) {
@@ -128,5 +140,19 @@ func TestDivertParsing(t *testing.T) {
 
 	story = Default()
 	err = story.Parse(input)
+	assert.NotNil(t, err)
+}
+
+func TestDivertJumping(t *testing.T) {
+	input := `
+	no next node available
+	`
+
+	story := Default()
+	err := story.Parse(input)
+	assert.Nil(t, err)
+
+	ctx := NewContext()
+	_, err = story.Resume(ctx)
 	assert.NotNil(t, err)
 }

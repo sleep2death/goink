@@ -142,6 +142,16 @@ func TestGatherParsing(t *testing.T) {
 	story = Default()
 	err = story.Parse(input)
 	assert.NotNil(t, err)
+
+	input = `
+	* a
+	* b
+	- (illegal label)gather -> END
+	`
+
+	story = Default()
+	err = story.Parse(input)
+	assert.NotNil(t, err)
 }
 
 func TestConditionalOption(t *testing.T) {
