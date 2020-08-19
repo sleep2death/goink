@@ -30,7 +30,6 @@ func TestBasicParse(t *testing.T) {
 	assert.Nil(t, err)
 
 	ctx := NewContext()
-
 	sec, err := story.Resume(ctx)
 	assert.Nil(t, err)
 

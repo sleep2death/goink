@@ -106,7 +106,11 @@ func (s *Story) Pick(ctx *Context, idx int) (sec *Section, err error) {
 	if err := s.load(ctx); err != nil {
 		return nil, err
 	}
-	return s.pick(idx)
+
+	sec, err = s.pick(idx)
+	// update ctx
+	*ctx = s.save()
+	return
 }
 
 func (s *Story) SetID(id string) {
