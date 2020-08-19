@@ -15,8 +15,11 @@ var (
 	glueStartReg = regexp.MustCompile(`^\<\>(.+)`)
 	glueEndReg   = regexp.MustCompile(`(.+)\<\>$`)
 
-	lableReg         = regexp.MustCompile(`^\s*\((.+)\)(.*)`)
-	illegalGatherReg = regexp.MustCompile(`\-\-\>`)
+	gatherReg    = regexp.MustCompile(`^((-\s*)+)([^>].+)`)
+	labelReg     = regexp.MustCompile(`^\s*\((.+)\)(.*)`)
+	validNameReg = regexp.MustCompile(`^[a-zA-Z_]\w*$`)
+	validPathReg = regexp.MustCompile(`^[a-zA-Z_]\w*(\.\w+)*$`)
+	// illegalGatherReg = regexp.MustCompile(`\-\-\>`)
 )
 
 // readLine parse and insert a new inline into story
@@ -28,24 +31,29 @@ func readLine(s *Story, input string) error {
 	}
 
 	l.story = s
-	l.parent = s.c
+	l.parent = s.current
 
-	l.path = s.c.Path() + SPLIT + "i"
+	l.path = s.current.Path() + PathSplit + "i"
 	s.paths[l.path] = l
 
-	s.setNext(l)
-	return nil
+	if n := s.next(); n != nil {
+		n.SetNext(l)
+		s.current = l
+
+		return nil
+	}
+	return errors.Errorf("current node can not set next: %s", s.current.Path())
 }
 
 // newLine from the input
 func newLine(input string) (*line, error) {
 	// Inline
-	i := &line{raw: input}
+	i := &line{base: &base{}, raw: input}
 
 	// illegal gather sign
-	if res := illegalGatherReg.FindStringSubmatch(input); res != nil {
+	/* if res := illegalGatherReg.FindStringSubmatch(input); res != nil {
 		return nil, errors.Errorf("illegal gather character: %s", input)
-	}
+	} */
 
 	// comment | spaces trimed
 	if res := commentReg.FindStringSubmatch(input); res != nil {
@@ -61,7 +69,7 @@ func newLine(input string) (*line, error) {
 		res = tagReg.FindStringSubmatch(input)
 	}
 	// reverse tag list
-	if len(i.tags) > 0 {
+	if len(i.tags) > 1 {
 		for j, k := 0, len(i.tags)-1; j < k; j, k = j+1, k-1 {
 			i.tags[j], i.tags[k] = i.tags[k], i.tags[j]
 		}
@@ -70,7 +78,11 @@ func newLine(input string) (*line, error) {
 	// divert | spaces trimmed
 	if res := divertReg.FindStringSubmatch(input); res != nil {
 		input = res[1]
-		i.divert = strings.TrimSpace(res[3])
+		d := strings.TrimSpace(res[3])
+		if valid := validPathReg.FindString(d); valid == "" {
+			return nil, errors.Errorf("invalid divert name: %s", d)
+		}
+		i.divert = strings.ToLower(strings.TrimSpace(res[3]))
 	}
 
 	// glue
@@ -86,17 +98,18 @@ func newLine(input string) (*line, error) {
 
 	// text | spaces not trimmed
 	i.text = input
+
+	// TODO: exprc parsing
+
 	return i, nil
 }
 
 // line node of the story
 type line struct {
-	story  *Story
-	parent Node
-	next   Node
-	path   string
+	*base
 
-	raw string
+	next Node
+	raw  string
 
 	comment string
 	tags    []string
@@ -108,64 +121,127 @@ type line struct {
 	text string
 }
 
-// render the inline's content into string
-func (l *line) render() string {
-	return l.text
-}
-
-// Parent of the line
-func (l *line) Parent() Node {
-	return l.parent
-}
-
-// Path of the inline
-func (l *line) Path() string {
-	return l.path
-}
-
 // SetNext content of the inline
 func (l *line) SetNext(obj Node) {
 	l.next = obj
 }
 
 // Next content of the inline
-func (l *line) Next() Node {
+func (l *line) Next() (Node, error) {
 	// divert
 	if l.divert != "" {
-		// return i.story.FindDivert(i.divert).Next()
-		if target := l.story.findDivert(l.divert, l); target != nil {
-			return target
+		if target := l.story.divert(l.divert, l); target != nil {
+			return target, nil
 		}
 
-		panic(errors.Errorf("can not find the divert: %s", l.divert))
+		return nil, errors.Errorf("can not find the divert: <%s>", l.divert)
 	}
 
 	// fallback to next
 	if l.next != nil {
-		return l.next
+		return l.next, nil
 	}
 
 	// fallback to gather
-	obj := l.parent
-	for obj != nil {
-		if c, ok := obj.(*options); ok {
+	p := l.parent
+	for p != nil {
+		if c, ok := p.(*options); ok {
 			if c.gather != nil {
-				return c.gather
+				return c.gather, nil
 			}
 		}
 
-		obj = obj.Parent()
+		p = p.Parent()
+	}
+
+	return nil, errors.Errorf("current node can not go next: [%s]", l.Path())
+}
+
+func (l *line) Render() (text string, tags []string) {
+	return l.text, l.tags
+}
+
+func (l *line) parseLabel() error {
+	if res := labelReg.FindStringSubmatch(l.text); res != nil {
+		label := strings.TrimSpace(res[1])
+		if len(label) > 0 {
+			if valid := validNameReg.FindString(label); valid == "" {
+				return errors.Errorf("invalid label name: %s", label)
+			}
+
+			if knot, stitch := l.story.container(l); stitch != nil {
+				label = stitch.Path() + PathSplit + label
+			} else if knot != nil {
+				label = knot.Path() + PathSplit + label
+			}
+
+			if _, ok := l.story.paths[label]; ok {
+				return errors.Errorf("conflict label name: %s", label)
+			}
+			l.story.paths[label] = l
+			l.path = label
+		}
+		l.text = res[2]
 	}
 
 	return nil
 }
 
-func (l *line) Render() (string, []string) {
-	// TODO: inline logic
-	return l.text, l.tags
+// readGather create and insert a new gather into story
+func readGather(s *Story, input string) error {
+	res := gatherReg.FindStringSubmatch(input)
+	if res != nil {
+		nesting := len(strings.Join(strings.Fields(res[1]), ""))
+		i, err := newLine(res[3])
+		if err != nil {
+			return err
+		}
+
+		g := &gather{line: i, nesting: nesting}
+		g.story = s
+
+		node := s.current
+		var choices *options
+		for node != nil {
+			if c, ok := node.(*options); ok {
+				if t := nesting - c.nesting; t == 0 {
+					choices = c
+					break
+				}
+			}
+
+			node = node.Parent()
+		}
+
+		if choices != nil && choices.gather == nil {
+			// if gather didn't have label
+			// set the default path
+			if g.path == "" {
+				g.path = choices.Path() + PathSplit + "g"
+				s.paths[g.path] = g
+			}
+
+			g.parent = nil // forbid gather from parenting
+
+			choices.gather = g
+			s.current = g
+
+			// parsing label
+			if err := i.parseLabel(); err != nil {
+				return err
+			}
+
+			return nil
+		}
+
+		return errors.Errorf("cannot find the choices of the gather: %s", input)
+	}
+
+	return errNotMatch
 }
 
-// Story of the inline
-func (l *line) Story() *Story {
-	return l.story
+// gather node of the choices
+type gather struct {
+	*line
+	nesting int
 }
