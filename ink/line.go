@@ -18,6 +18,7 @@ var (
 	gatherReg    = regexp.MustCompile(`^((-\s*)+)([^>].+)`)
 	labelReg     = regexp.MustCompile(`^\s*\((.+)\)(.*)`)
 	validNameReg = regexp.MustCompile(`^[a-zA-Z_]\w*$`)
+	validPathReg = regexp.MustCompile(`^[a-zA-Z_]\w*(\.\w+)*$`)
 	// illegalGatherReg = regexp.MustCompile(`\-\-\>`)
 )
 
@@ -77,6 +78,10 @@ func newLine(input string) (*line, error) {
 	// divert | spaces trimmed
 	if res := divertReg.FindStringSubmatch(input); res != nil {
 		input = res[1]
+		d := strings.TrimSpace(res[3])
+		if valid := validPathReg.FindString(d); valid == "" {
+			return nil, errors.Errorf("invalid divert name: %s", d)
+		}
 		i.divert = strings.ToLower(strings.TrimSpace(res[3]))
 	}
 
@@ -129,7 +134,7 @@ func (l *line) Next() (Node, error) {
 			return target, nil
 		}
 
-		return nil, errors.Errorf("can not find the divert: %s", l.divert)
+		return nil, errors.Errorf("can not find the divert: <%s>", l.divert)
 	}
 
 	// fallback to next

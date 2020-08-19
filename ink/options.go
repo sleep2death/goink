@@ -28,11 +28,6 @@ func readOption(s *Story, input string) error {
 		o := &opt{line: i}
 		o.story = s
 
-		// parsing label
-		if err := i.parseLabel(); err != nil {
-			return err
-		}
-
 		// once-only option
 		if len(res[2]) > 0 {
 			o.sticky = true
@@ -71,6 +66,11 @@ func readOption(s *Story, input string) error {
 
 		// condition exprc parsing
 		if err := o.parseExprc(); err != nil {
+			return err
+		}
+
+		// parsing label
+		if err := i.parseLabel(); err != nil {
 			return err
 		}
 
