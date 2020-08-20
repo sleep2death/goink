@@ -62,8 +62,9 @@ func TestKnotDivert(t *testing.T) {
 
 	story := Default()
 	err := story.Parse(input)
-	ctx := NewContext()
+	assert.Nil(t, err)
 
+	ctx := NewContext()
 	_, err = story.Resume(ctx)
 	assert.Nil(t, err)
 }
