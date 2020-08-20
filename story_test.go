@@ -38,3 +38,33 @@ func TestBasicParse(t *testing.T) {
 	assert.Equal(t, "end", ctx.Current())
 	assert.Equal(t, 5, len(sec.tags)) // 3 + start_tag + end_tag
 }
+
+func TestStoryLoad(t *testing.T) {
+	input := `
+	This is a basic parsing test. # TAG_A
+	Story will read these lines one by one, # tag b
+	And connect them togather... # tag c // comment
+	-> END
+	`
+	story := Default()
+	err := story.Parse(input)
+	story.SetID("ABC")
+	assert.Nil(t, err)
+
+	ctx := NewContext()
+	ctx.current = "invalid path"
+	_, err = story.Resume(ctx)
+	assert.Contains(t, err.Error(), "is not existed")
+
+	_, err = story.Pick(ctx, 0)
+	assert.Contains(t, err.Error(), "is not existed")
+
+	ctx.current = "start"
+	_, err = story.Pick(ctx, 0)
+	assert.Contains(t, err.Error(), "is not Choices")
+
+	ctx = NewContext()
+	ctx.Vars()["start__i"] = "invalid vars"
+	_, err = story.Resume(ctx)
+	assert.Contains(t, err.Error(), "is not type of int")
+}

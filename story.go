@@ -161,7 +161,7 @@ func (s *Story) pick(idx int) (sec *Section, err error) {
 		return s.resume()
 	}
 
-	return nil, errors.Errorf("%s is not [Choices]", s.current.Path())
+	return nil, errors.Errorf("%s is not Choices", s.current.Path())
 }
 
 func (s *Story) next() CanNext {
