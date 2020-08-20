@@ -176,3 +176,51 @@ func TestConditionalOption(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(sec.opts))
 }
+
+func TestStickyOption(t *testing.T) {
+	input := `
+    Hello
+	-> Knot
+	== Knot
+	this is a knot content.
+	+ {knot > 0}Opt A
+	  opt a content -> Knot
+	+ {knot == 0}Opt B -> knot
+	+ Opt C
+	- (gather) gather -> END
+	`
+
+	story := Default()
+	err := story.Parse(input)
+	assert.Nil(t, err)
+
+	ctx := NewContext()
+	sec, err := story.Resume(ctx)
+	assert.Nil(t, err)
+	assert.Equal(t, 2, len(sec.opts))
+
+	sec, err = story.Resume(ctx)
+	assert.Nil(t, err)
+	assert.Equal(t, 2, len(sec.opts))
+}
+
+func TestOpitionParenting(t *testing.T) {
+	input := `
+	* Hello A
+	** Hello B
+	**** Hello C
+	`
+
+	story := Default()
+	err := story.Parse(input)
+	assert.Contains(t, err.Error(), "wrong nesting")
+
+	input = `
+	* { fff > } Hello A -> END
+	** Hello B -> end
+	`
+
+	story = Default()
+	err = story.Parse(input)
+	assert.NotNil(t, err)
+}

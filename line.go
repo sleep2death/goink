@@ -42,6 +42,7 @@ func readLine(s *Story, input string) error {
 
 		return nil
 	}
+
 	return errors.Errorf("current node can not set next: %s", s.current.Path())
 }
 

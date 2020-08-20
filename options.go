@@ -54,11 +54,8 @@ func readOption(s *Story, input string) error {
 			}
 		}
 
-		// if option didn't have label
-		if o.path == "" {
-			o.path = opts.path + PathSplit + strconv.Itoa(len(opts.opts))
-			s.paths[o.path] = o
-		}
+		o.path = opts.path + PathSplit + strconv.Itoa(len(opts.opts))
+		s.paths[o.path] = o
 		opts.opts = append(opts.opts, o)
 
 		o.parent = opts
