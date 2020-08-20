@@ -224,3 +224,31 @@ func TestOpitionParenting(t *testing.T) {
 	err = story.Parse(input)
 	assert.NotNil(t, err)
 }
+
+func TestNestingGatherAndLabel(t *testing.T) {
+	input := `
+	* (label_a)Hello A -> knot_a
+	** (label_b)Hello B -> knot_b
+	*** (label_c)Hello C -> knot_c
+
+	== knot_a
+	# knot a tag
+	* (label_a) a
+	* (label_b) b
+	* (label_c) c
+	== knot_b
+	# knot b tag
+	* (label_a) a
+	* (label_b) b
+	* (label_c) c
+	== knot_c
+	# knot c tag
+	* (label_a) a
+	* (label_b) b
+	* (label_c) c
+	`
+
+	story := Default()
+	err := story.Parse(input)
+	assert.Nil(t, err)
+}

@@ -68,3 +68,52 @@ func TestStoryLoad(t *testing.T) {
 	_, err = story.Resume(ctx)
 	assert.Contains(t, err.Error(), "is not type of int")
 }
+
+func BenchmarkBasicStoryParsing(b *testing.B) {
+	input := `
+	This is a basic parsing test. # TAG_A
+	Story will read these lines one by one, # tag b
+	And connect them togather... # tag c // comment
+	-> END
+	`
+	for i := 0; i < b.N; i++ {
+		story := Default()
+		if err := story.Parse(input); err != nil {
+			panic(err)
+		}
+	}
+}
+
+func BenchmarkComplexStoryParsing(b *testing.B) {
+	input := `
+    Hello
+	-> Knot
+	== Knot
+	this is a knot content.
+	* {knot > 0} Opt A
+	  opt a content -> Knot
+	* Opt B -> knot
+	* Opt C
+	- (gather) gather -> END
+	== Knot_B
+	this is a knot content.
+	* {knot > 0} Opt A
+	  opt a content -> Knot
+	* Opt B -> knot
+	* Opt C
+	- (gather) gather -> END
+	== Knot_C
+	this is a knot content.
+	* {knot > 0} Opt A
+	  opt a content -> Knot
+	* Opt B -> knot
+	* Opt C
+	- (gather) gather -> END
+	`
+	for i := 0; i < b.N; i++ {
+		story := Default()
+		if err := story.Parse(input); err != nil {
+			b.Log(err)
+		}
+	}
+}

@@ -193,6 +193,7 @@ func (l *line) parseLabel() error {
 			if _, ok := l.story.paths[label]; ok {
 				return errors.Errorf("conflict label name: %s", label)
 			}
+
 			l.story.paths[label] = l
 			l.path = label
 		}
@@ -236,15 +237,17 @@ func readGather(s *Story, input string) error {
 				s.paths[g.path] = g
 			}
 
-			g.parent = nil // forbid gather from parenting
-
 			choices.gather = g
 			s.current = g
+
+			g.parent = choices
 
 			// parsing label
 			if err := i.parseLabel(); err != nil {
 				return err
 			}
+
+			g.parent = nil // forbid gather from parenting
 
 			return nil
 		}
