@@ -25,9 +25,23 @@ var (
 // readLine parse and insert a new inline into story
 func readLine(s *Story, input string) error {
 	l, err := newLine(input)
-
 	if err != nil {
 		return err
+	}
+
+	// tags and comments only inline
+	// try to find the parent knot or divert
+	// and add tags
+	if len(l.tags) > 0 && l.divert == "" && l.text == "" {
+		switch p := s.current.(type) {
+		case *knot:
+			p.tags = append(p.tags, l.tags...)
+			return nil
+		case *stitch:
+			p.tags = append(p.tags, l.tags...)
+			return nil
+		default:
+		}
 	}
 
 	l.story = s

@@ -93,3 +93,28 @@ func TestStitchParsing(t *testing.T) {
 	err = story.Parse(input)
 	assert.Contains(t, err.Error(), "conflict stitch")
 }
+
+func TestKnotAndStitchTagsParsing(t *testing.T) {
+	input := `
+	-> knot_a
+	== knot_a
+	# KNOT TAG A
+	# Knot tag b # knot tag b
+	hello -> stitch
+	= stitch
+	# stitch a
+	# stitch b
+	-> end
+	`
+
+	story := Default()
+	err := story.Parse(input)
+	assert.Nil(t, err)
+
+	assert.Equal(t, 3, len(story.paths["knot_a"].(*knot).tags))
+	assert.Equal(t, 2, len(story.paths["knot_a__stitch"].(*stitch).tags))
+
+	ctx := NewContext()
+	_, err = story.Resume(ctx)
+	assert.Nil(t, err)
+}

@@ -44,6 +44,8 @@ type knot struct {
 	stitches []*stitch
 	name     string
 	next     Node
+
+	tags []string
 }
 
 // Path of the knot
@@ -78,7 +80,7 @@ func (k *knot) Next() (Node, error) {
 
 // Render the content of knot... should be both empty
 func (k *knot) Render() (output string, tags []string) {
-	return "", nil
+	return "", k.tags
 }
 
 // find stitch of the knot by name
@@ -129,6 +131,8 @@ type stitch struct {
 
 	path string
 	next Node
+
+	tags []string
 }
 
 // Name of the stitch
@@ -163,5 +167,5 @@ func (s *stitch) Next() (Node, error) {
 
 // Render the content of stitch... should be both empty
 func (s *stitch) Render() (output string, tags []string) {
-	return "", nil
+	return "", s.tags
 }
