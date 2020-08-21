@@ -69,6 +69,45 @@ func TestStoryLoad(t *testing.T) {
 	assert.Contains(t, err.Error(), "is not type of int")
 }
 
+func TestInvalidNextNode(t *testing.T) {
+	input := `
+	This is a basic parsing test. # TAG_A
+	Story will read these lines one by one, # tag b
+	And connect them togather... # tag c // comment
+	== Knot_A
+	-> END
+	`
+	story := Default()
+	err := story.Parse(input)
+	assert.Nil(t, err)
+
+	err = story.PostParsing()
+	assert.Contains(t, err.Error(), "can not go next")
+
+	input = `
+	* opt a
+	* opt b
+	* opt c
+	`
+	story = Default()
+	err = story.Parse(input)
+	assert.Nil(t, err)
+	err = story.PostParsing()
+	assert.Contains(t, err.Error(), "can not go next")
+
+	input = `
+	* opt a
+	* opt b
+	* opt c
+	- gather -> end
+	`
+	story = Default()
+	err = story.Parse(input)
+	assert.Nil(t, err)
+	err = story.PostParsing()
+	assert.Nil(t, err)
+}
+
 func BenchmarkBasicStoryParsing(b *testing.B) {
 	input := `
 	This is a basic parsing test. # TAG_A

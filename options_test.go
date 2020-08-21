@@ -238,7 +238,8 @@ func TestNestingGatherAndLabel(t *testing.T) {
 	* (label_c) c
 	== knot_b
 	# knot b tag
-	* (label_a) a
+	* (label_a) a -> stitch_a
+	== stitch
 	* (label_b) b
 	* (label_c) c
 	== knot_c

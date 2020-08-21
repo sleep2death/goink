@@ -136,6 +136,14 @@ type line struct {
 	text string
 }
 
+// PostParsing of line
+func (l *line) PostParsing() error {
+	if n, _ := l.Next(); n == nil {
+		return errors.Errorf("'%s' can not go next", l.Path())
+	}
+	return nil
+}
+
 // SetNext content of the inline
 func (l *line) SetNext(obj Node) {
 	l.next = obj
@@ -239,15 +247,13 @@ func readGather(s *Story, input string) error {
 
 			choices.gather = g
 			s.current = g
-
 			g.parent = choices
 
 			// parsing label
 			if err := i.parseLabel(); err != nil {
 				return err
 			}
-
-			g.parent = nil // forbid gather from parenting
+			g.parent = nil // forbid gather from parenting after label parsing
 
 			return nil
 		}

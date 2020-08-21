@@ -14,22 +14,20 @@ var (
 
 // readKnot parse and insert a new knot into story
 func readKnot(s *Story, input string) error {
-	// == knot
 	result := knotReg.FindStringSubmatch(input)
 	if result != nil {
 		name := strings.ToLower(result[3])
 
-		k := &knot{story: s, name: name}
+		k := &knot{base: &base{story: s}, name: name}
 		s.knots = append(s.knots, k)
-		s.current = k
-
 		k.path = name
 
-		if s.paths[k.path] != nil {
+		if _, ok := s.paths[k.path]; ok {
 			return errors.Errorf("conflict knot name: %s", name)
 		}
 		s.paths[k.path] = k
 
+		s.current = k
 		return nil
 	}
 
@@ -38,8 +36,7 @@ func readKnot(s *Story, input string) error {
 
 // knot is a container of story's content
 type knot struct {
-	story *Story
-	path  string
+	*base
 
 	stitches []*stitch
 	name     string
@@ -110,7 +107,7 @@ func readStitch(s *Story, input string) error {
 			return errors.Errorf("conflict stitch name: %s", name)
 		}
 
-		stitch := &stitch{story: s, name: name, knot: k}
+		stitch := &stitch{base: &base{story: s}, name: name, knot: k}
 		k.stitches = append(k.stitches, stitch)
 		s.current = stitch
 
@@ -125,29 +122,17 @@ func readStitch(s *Story, input string) error {
 
 // stitch is a sub container of a knot
 type stitch struct {
-	story *Story
-	knot  *knot
-	name  string
+	*base
+	knot *knot
+	name string
 
-	path string
 	next Node
-
 	tags []string
 }
 
 // Name of the stitch
 func (s *stitch) Name() string {
 	return s.name
-}
-
-// Path of the stitch
-func (s *stitch) Path() string {
-	return s.path
-}
-
-// Story of the stitch
-func (s *stitch) Story() *Story {
-	return s.story
 }
 
 // Parent of the stitch should always be nil

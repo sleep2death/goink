@@ -18,6 +18,7 @@ var (
 type Node interface {
 	Story() *Story
 	Parent() Node
+	PostParsing() error
 
 	Path() string
 }
@@ -42,6 +43,11 @@ func (b *base) Parent() Node {
 // Path of the node
 func (b *base) Path() string {
 	return b.path
+}
+
+// do some post parsing check
+func (b *base) PostParsing() error {
+	return nil
 }
 
 // End of story
@@ -440,5 +446,14 @@ func (s *Story) Parse(input string) error {
 		}
 	}
 
+	return nil
+}
+
+func (s *Story) PostParsing() error {
+	for _, node := range s.paths {
+		if err := node.PostParsing(); err != nil {
+			return err
+		}
+	}
 	return nil
 }
