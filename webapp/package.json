@@ -1,0 +1,34 @@
+{
+  "name": "goink",
+  "version": "0.0.1",
+  "description": "a goink editor",
+  "keywords": [
+    "goink",
+    "ink",
+    "golang"
+  ],
+  "license": "GNU",
+  "author": "aspirin",
+  "scripts": {
+    "build": "npm run build-index && npm run build-worker",
+    "dev": "parcel index.html --open",
+    "start": "npm run build && npm run dev",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build-index": "parcel build index.html",
+    "build-worker": "parcel build node_modules/monaco-editor/esm/vs/editor/editor.worker.js --no-source-maps"
+  },
+  "dependencies": {
+    "bulma": "^0.9.0",
+    "monaco-editor": "^0.20.0",
+    "whatwg-fetch": "^3.4.0"
+  },
+  "devDependencies": {
+    "eslint": "^7.7.0",
+    "eslint-config-standard": "^14.1.1",
+    "eslint-plugin-import": "^2.22.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-standard": "^4.0.1",
+    "parcel-bundler": "^1.12.4"
+  }
+}
