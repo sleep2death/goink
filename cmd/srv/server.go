@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 )
@@ -32,5 +33,8 @@ func main() {
 		})
 	})
 
-	r.Run(":9090") // listen and serve on 0.0.0.0:9090 (for windows "localhost:8080")
+	// listen and serve on 0.0.0.0:9090 (for windows "localhost:8080")
+	if err := r.Run(":9090"); err != nil {
+		os.Exit(-1)
+	}
 }
