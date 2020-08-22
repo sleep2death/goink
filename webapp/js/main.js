@@ -56,7 +56,7 @@ editor.onDidChangeModelContent(function () {
   if (timeout != null) clearTimeout(timeout)
 
   timeout = setTimeout(function () {
-    fetch('http://localhost:9090/api/onchange', {
+    fetch('http://localhost:9090/editor/onchange', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
