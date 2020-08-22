@@ -20,7 +20,7 @@ func TestLineParsing(t *testing.T) {
 	ctx := NewContext()
 	sec, err := story.Resume(ctx)
 	assert.Nil(t, err)
-	assert.Contains(t, sec.text, "No.2")
+	assert.Contains(t, sec.Text, "No.2")
 
 	l1, _ := story.paths["start__i"].(*line)
 	assert.Equal(t, 3, len(l1.tags))
@@ -86,12 +86,12 @@ func TestLabelParsing(t *testing.T) {
 	ctx := NewContext()
 	sec, err := story.Resume(ctx)
 	assert.Nil(t, err)
-	assert.Equal(t, 3, len(sec.opts))
+	assert.Equal(t, 3, len(sec.Opts))
 
 	sec, err = story.Pick(ctx, 1)
 	assert.Nil(t, err)
-	assert.NotContains(t, sec.text, "knot b")
-	assert.Contains(t, sec.text, "stitch content")
+	assert.NotContains(t, sec.Text, "knot b")
+	assert.Contains(t, sec.Text, "stitch content")
 
 	_, err = story.Pick(ctx, 0)
 	assert.Nil(t, err)

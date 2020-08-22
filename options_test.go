@@ -24,8 +24,8 @@ func TestOptionsParse(t *testing.T) {
 
 	sec, err := story.Resume(ctx)
 	assert.Nil(t, err)
-	assert.Equal(t, "Opt A", sec.opts[0])
-	assert.False(t, sec.end)
+	assert.Equal(t, "Opt A", sec.Opts[0])
+	assert.False(t, sec.End)
 
 	_, err = story.Pick(ctx, 0) // pick Opt A
 	assert.Nil(t, err)
@@ -33,8 +33,8 @@ func TestOptionsParse(t *testing.T) {
 	ctx = NewContext() // start with new context
 	sec, err = story.Resume(ctx)
 	assert.Nil(t, err)
-	assert.Equal(t, "Opt B", sec.opts[1])
-	assert.False(t, sec.end)
+	assert.Equal(t, "Opt B", sec.Opts[1])
+	assert.False(t, sec.End)
 
 	_, err = story.Pick(ctx, 1) // pick Opt B
 	assert.Nil(t, err)
@@ -61,14 +61,14 @@ func TestGatherOfOptions(t *testing.T) {
 
 	sec, err := story.Resume(ctx)
 	assert.Nil(t, err)
-	assert.Equal(t, "Opt ABC", sec.opts[0])
-	assert.False(t, sec.end)
+	assert.Equal(t, "Opt ABC", sec.Opts[0])
+	assert.False(t, sec.End)
 
 	sec, err = story.Pick(ctx, 0)       // pick Opt A, and fall to 'gather'
-	assert.Contains(t, sec.text, "DEF") //supressing text
-	assert.NotContains(t, sec.text, "ABC")
+	assert.Contains(t, sec.Text, "DEF") //supressing text
+	assert.NotContains(t, sec.Text, "ABC")
 
-	assert.Equal(t, true, sec.end)
+	assert.Equal(t, true, sec.End)
 	assert.Nil(t, err)
 }
 
@@ -91,17 +91,17 @@ func TestOnceOnlyOption(t *testing.T) {
 	ctx := NewContext()
 	sec, err := story.Resume(ctx)
 	assert.Nil(t, err)
-	assert.Contains(t, sec.text, "this is a knot content")
-	assert.Equal(t, 3, len(sec.opts))
+	assert.Contains(t, sec.Text, "this is a knot content")
+	assert.Equal(t, 3, len(sec.Opts))
 
 	sec, err = story.Pick(ctx, 0)
 	assert.Nil(t, err)
-	assert.Equal(t, 2, len(sec.opts)) // opt a should removed from list
+	assert.Equal(t, 2, len(sec.Opts)) // opt a should removed from list
 
 	sec, err = story.Pick(ctx, 0)
 	assert.Nil(t, err)
-	assert.Equal(t, 1, len(sec.opts)) // opt b should removed from list
-	assert.Contains(t, sec.text, "Opt B")
+	assert.Equal(t, 1, len(sec.Opts)) // opt b should removed from list
+	assert.Contains(t, sec.Text, "Opt B")
 }
 
 func TestGatherParsing(t *testing.T) {
@@ -124,7 +124,7 @@ func TestGatherParsing(t *testing.T) {
 	ctx := NewContext()
 	sec, err := story.Resume(ctx)
 	assert.Nil(t, err)
-	assert.Empty(t, sec.text)
+	assert.Empty(t, sec.Text)
 
 	_, err = story.Pick(ctx, 0) // select Opt-A
 	assert.Nil(t, err)
@@ -132,8 +132,8 @@ func TestGatherParsing(t *testing.T) {
 	sec, err = story.Pick(ctx, 0) // select Opt-A.1
 	assert.Nil(t, err)
 
-	assert.Contains(t, sec.text, "opt a.1 content")
-	assert.Contains(t, sec.text, "gather")
+	assert.Contains(t, sec.Text, "opt a.1 content")
+	assert.Contains(t, sec.Text, "gather")
 
 	input = `
 	- gather -> END
@@ -174,7 +174,7 @@ func TestConditionalOption(t *testing.T) {
 	ctx := NewContext()
 	sec, err := story.Resume(ctx)
 	assert.Nil(t, err)
-	assert.Equal(t, 2, len(sec.opts))
+	assert.Equal(t, 2, len(sec.Opts))
 }
 
 func TestStickyOption(t *testing.T) {
@@ -197,11 +197,11 @@ func TestStickyOption(t *testing.T) {
 	ctx := NewContext()
 	sec, err := story.Resume(ctx)
 	assert.Nil(t, err)
-	assert.Equal(t, 2, len(sec.opts))
+	assert.Equal(t, 2, len(sec.Opts))
 
 	sec, err = story.Resume(ctx)
 	assert.Nil(t, err)
-	assert.Equal(t, 2, len(sec.opts))
+	assert.Equal(t, 2, len(sec.Opts))
 }
 
 func TestOpitionParenting(t *testing.T) {

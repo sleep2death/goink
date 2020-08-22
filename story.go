@@ -118,6 +118,7 @@ func (s *Story) Pick(ctx *Context, idx int) (sec *Section, err error) {
 	return
 }
 
+// SetID of the story
 func (s *Story) SetID(id string) {
 	s.id = id
 }
@@ -325,21 +326,21 @@ func (c *Context) Vars() map[string]interface{} {
 
 // Section is rendered result of current story
 type Section struct {
-	text string
-	tags []string
+	Text string   `json:"text"`
+	Tags []string `json:"tags"`
 
-	opts     []string
-	optsTags [][]string
+	Opts     []string   `json:"opts"`
+	OptsTags [][]string `json:"optsTags"`
 
-	end bool
+	End bool `json:"end" binding:"required"`
 }
 
 func (s *Section) add(text string, tags []string) {
 	if len(text) > 0 {
-		s.text = s.text + "\n" + text
+		s.Text = s.Text + "\n" + text
 	}
 
-	s.tags = append(s.tags, tags...)
+	s.Tags = append(s.Tags, tags...)
 }
 
 // Nodes list
@@ -351,13 +352,13 @@ func (n nodes) section() *Section {
 	for _, node := range n {
 		switch node := node.(type) {
 		case End:
-			sec.end = true
+			sec.End = true
 			sec.add(node.End())
 		case Choices:
 			opts, optsTags := node.List()
 
-			sec.opts = opts
-			sec.optsTags = optsTags
+			sec.Opts = opts
+			sec.OptsTags = optsTags
 		case CanNext:
 			sec.add(node.Render())
 		}
@@ -449,6 +450,7 @@ func (s *Story) Parse(input string) error {
 	return nil
 }
 
+// PostParsing when all input parsing has done
 func (s *Story) PostParsing() error {
 	for _, node := range s.paths {
 		if err := node.PostParsing(); err != nil {
