@@ -5,11 +5,3 @@
 .editor {
   height: 100%;
 }
-
-.lineErrorDeco {
-  text-decoration: underline;
-  text-decoration-style: wavy;
-  text-decoration-color: red !important;
-  cursor: pointer;
-  font-style: oblique;
-}

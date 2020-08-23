@@ -434,6 +434,7 @@ func Default() *Story {
 
 	story.paths = make(map[string]Node)
 	story.vars = make(map[string]interface{})
+	story.lineNumber = 0
 
 	story.paths["start"] = s
 	story.paths["end"] = e

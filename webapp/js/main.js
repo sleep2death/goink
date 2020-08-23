@@ -114,6 +114,15 @@ editor.onDidChangeModelContent(function () {
       })
       .then((json) => {
         if (json.error != null) {
+          new Noty({
+            type: 'error',
+            theme: 'mint',
+            timeout: 1500,
+            layout: 'topRight',
+            progressBar: false,
+            text: 'parsing error'
+          }).show()
+
           const res = json.error.match(lnReg)
           if (res[2] != null) {
             const ln = parseInt(res[2])
@@ -135,8 +144,7 @@ editor.onDidChangeModelContent(function () {
           monaco.editor.setModelMarkers(model, '', [])
         }
       })
-      .catch(function (e) {
-        console.log(e)
+      .catch(function () {
         new Noty({
           type: 'error',
           theme: 'mint',
