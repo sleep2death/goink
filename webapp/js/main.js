@@ -114,14 +114,7 @@ editor.onDidChangeModelContent(function () {
       })
       .then((json) => {
         if (json.error != null) {
-          new Noty({
-            type: 'error',
-            theme: 'mint',
-            timeout: 1500,
-            layout: 'topRight',
-            progressBar: false,
-            text: 'parsing error'
-          }).show()
+          showError('server parsing error')
 
           const res = json.error.match(lnReg)
           if (res[2] != null) {
@@ -145,14 +138,18 @@ editor.onDidChangeModelContent(function () {
         }
       })
       .catch(function () {
-        new Noty({
-          type: 'error',
-          theme: 'mint',
-          timeout: 1500,
-          layout: 'topRight',
-          progressBar: false,
-          text: 'server connection error'
-        }).show()
+        showError('can not fetch from server')
       })
   }, 600)
 })
+
+function showError (error) {
+  new Noty({
+    type: 'error',
+    theme: 'mint',
+    timeout: 1500,
+    layout: 'topRight',
+    progressBar: false,
+    text: error
+  }).show()
+}

@@ -1,7 +1,12 @@
 .content {
-  height: 800px;
+  margin-bottom: 30px;
 }
 
 .editor {
-  height: 100%;
+  margin: 2px;
+  height: 800.08px;
+
+  border-style:solid;
+  border-color:darkgray;
+  border-width:1px;
 }
