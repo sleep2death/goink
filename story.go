@@ -169,7 +169,7 @@ loop:
 			}
 			s.current = n
 		default:
-			return nil, errors.Errorf("current node is not recgonized: %s", s.current.Path())
+			return nil, errors.New("current line is not recgonized")
 		}
 	}
 
@@ -188,7 +188,7 @@ func (s *Story) pick(idx int) (sec *Section, err error) {
 		return s.resume()
 	}
 
-	return nil, errors.Errorf("%s is not Choices", s.current.Path())
+	return nil, errors.New("current line is not an option")
 }
 
 func (s *Story) next() CanNext {
@@ -397,7 +397,7 @@ func (s *start) SetNext(n Node) {
 
 func (s *start) Next() (Node, error) {
 	if s.next == nil {
-		return nil, errors.New("current node can not go next: [start]")
+		return nil, errors.New("current line can not go next")
 	}
 
 	return s.next, nil

@@ -61,7 +61,7 @@ func TestStoryLoad(t *testing.T) {
 
 	ctx.current = "start"
 	_, err = story.Pick(ctx, 0)
-	assert.Contains(t, err.Error(), "is not Choices")
+	assert.Contains(t, err.Error(), "is not an option")
 
 	ctx = NewContext()
 	ctx.Vars()["start__i"] = "invalid vars"

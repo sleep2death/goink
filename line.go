@@ -58,18 +58,13 @@ func readLine(s *Story, input string, ln int) error {
 		return nil
 	}
 
-	return errors.Errorf("current node can not set next: %s", s.current.Path())
+	return errors.New("current line can not set next")
 }
 
 // newLine from the input
 func newLine(input string) (*line, error) {
 	// Inline
 	i := &line{base: &base{}, raw: input}
-
-	// illegal gather sign
-	/* if res := illegalGatherReg.FindStringSubmatch(input); res != nil {
-		return nil, errors.Errorf("illegal gather character: %s", input)
-	} */
 
 	// comment | spaces trimed
 	if res := commentReg.FindStringSubmatch(input); res != nil {
@@ -178,7 +173,7 @@ func (l *line) Next() (Node, error) {
 		p = p.Parent()
 	}
 
-	return nil, errors.Errorf("current node can not go next: [%s]", l.Path())
+	return nil, errors.New("current line can not go next")
 }
 
 func (l *line) Render() (text string, tags []string) {
@@ -260,7 +255,7 @@ func readGather(s *Story, input string, ln int) error {
 			return nil
 		}
 
-		return errors.Errorf("cannot find the choices of the gather: %s", input)
+		return errors.New("cannot find the options of the gather")
 	}
 
 	return errNotMatch
