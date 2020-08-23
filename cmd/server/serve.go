@@ -28,7 +28,7 @@ func main() {
 		story := goink.Default()
 
 		if err := story.Parse(json.Value); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			c.AbortWithStatusJSON(http.StatusOK, gin.H{"error": err.Error()})
 			return
 		}
 
@@ -36,7 +36,7 @@ func main() {
 		sec, err := story.Resume(ctx)
 
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			c.AbortWithStatusJSON(http.StatusOK, gin.H{"error": err.Error()})
 			return
 		}
 

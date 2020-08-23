@@ -138,8 +138,8 @@ type line struct {
 
 // PostParsing of line
 func (l *line) PostParsing() error {
-	if n, _ := l.Next(); n == nil {
-		return errors.Errorf("'%s' can not go next", l.Path())
+	if n, err := l.Next(); n == nil {
+		return err
 	}
 	return nil
 }
@@ -157,7 +157,7 @@ func (l *line) Next() (Node, error) {
 			return target, nil
 		}
 
-		return nil, errors.Errorf("can not find the divert: <%s>", l.divert)
+		return nil, errors.Errorf("can not find the divert: %s", l.divert)
 	}
 
 	// fallback to next

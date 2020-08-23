@@ -124,7 +124,7 @@ func TestDivertParsing(t *testing.T) {
 
 	ctx := NewContext()
 	_, err = story.Resume(ctx)
-	assert.Equal(t, "can not find the divert: <divert>", err.Error())
+	assert.Equal(t, "can not find the divert: divert", err.Error())
 
 	input = `
 	go to invalid divert -> invalid divert

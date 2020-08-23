@@ -1,5 +1,11 @@
 import 'bulma/css/bulma.css'
+
 import * as monaco from 'monaco-editor'
+
+import Noty from 'noty'
+import 'noty/lib/noty.css'
+import 'noty/lib/themes/mint.css'
+
 import 'whatwg-fetch'
 
 self.MonacoEnvironment = {
@@ -16,14 +22,18 @@ monaco.languages.setMonarchTokensProvider('goink', {
   defaultToken: '',
   tokenPostfix: '.ink',
   tokenizer: {
-    root: [[/(ink|goink|inky|inkle)/, ['inky']]]
+    root: [
+      [/(ink|goink|inkle|inky)/, ['inky']],
+      [/^\/\/*.*/, 'comment'],
+      [/^\*\**/, 'keyword']
+    ]
   }
 })
 
 // Define a new theme that contains only rules that match this language
 monaco.editor.defineTheme('goinkTheme', {
   base: 'vs',
-  inherit: false,
+  inherit: true,
   rules: [{ token: 'inky', foreground: '202020', fontStyle: 'bold italic' }]
 })
 
@@ -37,7 +47,10 @@ function getCode () {
   return [
     '<goink ver 0.0.5-alpha>',
     "This is a go rewrite of inkle's ink - ",
-    'a scripting language for writing interactive narrative.'
+    'a scripting language for writing interactive narrative.',
+    "// Let's get started!",
+    '* Here is a simple option.',
+    "* Using '*' to add an option."
   ].join('\n')
 }
 
@@ -71,8 +84,16 @@ editor.onDidChangeModelContent(function () {
       .then(function (json) {
         console.log('res', json)
       })
-      .catch(function (error) {
-        console.error('request failed', error)
+      .catch(function () {
+        // console.error('request failed', error)
+        new Noty({
+          type: 'error',
+          theme: 'mint',
+          timeout: 1500,
+          layout: 'topRight',
+          progressBar: false,
+          text: 'server connection error'
+        }).show()
       })
   }, 600)
 })
