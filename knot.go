@@ -80,6 +80,13 @@ func (k *knot) Render() (output string, tags []string) {
 	return "", k.tags
 }
 
+func (k *knot) PostParsing() error {
+	if k.next == nil {
+		return errors.New("current knot can not go next")
+	}
+	return nil
+}
+
 // find stitch of the knot by name
 func (k *knot) stitch(name string) *stitch {
 	if s, ok := k.story.paths[k.name+PathSplit+name]; ok {
@@ -153,4 +160,11 @@ func (s *stitch) Next() (Node, error) {
 // Render the content of stitch... should be both empty
 func (s *stitch) Render() (output string, tags []string) {
 	return "", s.tags
+}
+
+func (s *stitch) PostParsing() error {
+	if s.next == nil {
+		return errors.New("current stitch can not go next")
+	}
+	return nil
 }

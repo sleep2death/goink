@@ -118,3 +118,31 @@ func TestKnotAndStitchTagsParsing(t *testing.T) {
 	_, err = story.Resume(ctx)
 	assert.Nil(t, err)
 }
+
+func TestKnotAndStitchPostParsing(t *testing.T) {
+	input := `
+	-> knot_a
+	== knot_a ==
+	`
+
+	story := Default()
+	err := story.Parse(input)
+	assert.Nil(t, err)
+
+	err = story.PostParsing()
+	assert.Contains(t, err.Error(), "can not go next")
+
+	input = `
+	-> knot_a
+	== knot_a ==
+	-> stitch_a
+	= stitch_a
+	`
+
+	story = Default()
+	err = story.Parse(input)
+	assert.Nil(t, err)
+
+	err = story.PostParsing()
+	assert.Contains(t, err.Error(), "can not go next")
+}
