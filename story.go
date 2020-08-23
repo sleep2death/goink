@@ -100,6 +100,9 @@ type Story struct {
 
 	id  string // story's unique name
 	mux sync.Mutex
+
+	// current parsing line
+	lineNumber int
 }
 
 // Resume the story
@@ -442,14 +445,11 @@ func Default() *Story {
 // ParseFunc of the story
 type ParseFunc func(s *Story, input string, lineNumber int) error
 
-// current parsing line
-var lineNumber int
-
 // Parse the input text
 func (s *Story) Parse(input string) error {
 	contents := strings.Split(input, "\n")
 	for _, line := range contents {
-		lineNumber++
+		s.lineNumber++
 
 		// trim spaces and skip empty lines
 		l := strings.TrimRight(strings.TrimSpace(line), "\r\n")
@@ -459,9 +459,9 @@ func (s *Story) Parse(input string) error {
 
 		// passing raw input into parsers
 		for _, parser := range s.parsers {
-			if err := parser(s, l, lineNumber); err != nil {
+			if err := parser(s, l, s.lineNumber); err != nil {
 				if err != errNotMatch {
-					return &errInk{err, lineNumber}
+					return &errInk{err, s.lineNumber}
 				}
 			} else {
 				break

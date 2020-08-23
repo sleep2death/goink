@@ -30,6 +30,34 @@ monaco.languages.setMonarchTokensProvider('goink', {
   }
 })
 
+monaco.languages.setLanguageConfiguration('goink', {
+  comments: {
+    lineComment: '//',
+    blockComment: ['/*', '*/']
+  },
+  brackets: [
+    ['{', '}'],
+    ['[', ']'],
+    ['(', ')']
+  ],
+  autoClosingPairs: [
+    { open: '{', close: '}' },
+    { open: '[', close: ']' },
+    { open: '(', close: ')' },
+    { open: '`', close: '`', notIn: ['string'] },
+    { open: '"', close: '"', notIn: ['string'] },
+    { open: "'", close: "'", notIn: ['string', 'comment'] }
+  ],
+  surroundingPairs: [
+    { open: '{', close: '}' },
+    { open: '[', close: ']' },
+    { open: '(', close: ')' },
+    { open: '`', close: '`' },
+    { open: '"', close: '"' },
+    { open: "'", close: "'" }
+  ]
+})
+
 // Define a new theme that contains only rules that match this language
 monaco.editor.defineTheme('goinkTheme', {
   base: 'vs',
@@ -42,6 +70,8 @@ const editor = monaco.editor.create(document.getElementById('editor'), {
   value: getCode(),
   language: 'goink'
 })
+
+const model = editor.getModel()
 
 function getCode () {
   return [
@@ -64,6 +94,7 @@ editor.setPosition({
 })
 
 var timeout = null
+const lnReg = /^(.+)\sln:\s(\d+)/
 // send editor's content with delayed time
 editor.onDidChangeModelContent(function () {
   if (timeout != null) clearTimeout(timeout)
@@ -78,14 +109,34 @@ editor.onDidChangeModelContent(function () {
         value: editor.getValue()
       })
     })
-      .then(function (resp) {
+      .then((resp) => {
         return resp.json()
       })
-      .then(function (json) {
-        console.log('res', json)
+      .then((json) => {
+        if (json.error != null) {
+          const res = json.error.match(lnReg)
+          if (res[2] != null) {
+            const ln = parseInt(res[2])
+            // console.log('some error happens @line:', ln)
+            // set error marker
+            monaco.editor.setModelMarkers(model, '', [
+              {
+                severity: monaco.MarkerSeverity.Error,
+                message: res[1],
+                startColumn: 0,
+                startLineNumber: ln,
+                endColumn: 1000,
+                endLineNumber: ln
+              }
+            ])
+          }
+        } else {
+          // clear markers
+          monaco.editor.setModelMarkers(model, '', [])
+        }
       })
-      .catch(function () {
-        // console.error('request failed', error)
+      .catch(function (e) {
+        console.log(e)
         new Noty({
           type: 'error',
           theme: 'mint',

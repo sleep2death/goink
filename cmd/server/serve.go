@@ -32,6 +32,11 @@ func main() {
 			return
 		}
 
+		if err := story.PostParsing(); err != nil {
+			c.AbortWithStatusJSON(http.StatusOK, gin.H{"error": err.Error()})
+			return
+		}
+
 		ctx := goink.NewContext()
 		sec, err := story.Resume(ctx)
 
