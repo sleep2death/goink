@@ -255,8 +255,7 @@ func TestNestingGatherAndLabel(t *testing.T) {
 }
 
 func TestOptionPostParsing(t *testing.T) {
-	input := `
-	* (label_a)Hello A -> knot_a
+	input := `* (label_a)Hello A -> knot_a
 	** (label_b)Hello B -> knot_b
 	*** (label_c)Hello C -> knot_cz`
 
@@ -266,4 +265,5 @@ func TestOptionPostParsing(t *testing.T) {
 
 	err = story.PostParsing()
 	assert.Contains(t, err.Error(), "can not find the divert")
+	assert.Contains(t, err.Error(), "ln: 1")
 }

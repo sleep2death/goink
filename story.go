@@ -1,6 +1,7 @@
 package goink
 
 import (
+	"strconv"
 	"strings"
 	"sync"
 
@@ -21,6 +22,16 @@ type Node interface {
 	PostParsing() error
 
 	Path() string
+	LN() int
+}
+
+type errInk struct {
+	err error
+	ln  int
+}
+
+func (e *errInk) Error() string {
+	return e.err.Error() + " ln: " + strconv.Itoa(e.ln)
 }
 
 // embeding struct which implements Node
@@ -28,6 +39,7 @@ type base struct {
 	story  *Story
 	parent Node
 	path   string
+	ln     int
 }
 
 // Story of the node
@@ -43,6 +55,11 @@ func (b *base) Parent() Node {
 // Path of the node
 func (b *base) Path() string {
 	return b.path
+}
+
+// LN - line number of the node
+func (b *base) LN() int {
+	return b.ln
 }
 
 // do some post parsing check
@@ -423,12 +440,17 @@ func Default() *Story {
 }
 
 // ParseFunc of the story
-type ParseFunc func(s *Story, input string) error
+type ParseFunc func(s *Story, input string, lineNumber int) error
+
+// current parsing line
+var lineNumber int
 
 // Parse the input text
 func (s *Story) Parse(input string) error {
 	contents := strings.Split(input, "\n")
 	for _, line := range contents {
+		lineNumber++
+
 		// trim spaces and skip empty lines
 		l := strings.TrimRight(strings.TrimSpace(line), "\r\n")
 		if len(l) == 0 {
@@ -437,9 +459,9 @@ func (s *Story) Parse(input string) error {
 
 		// passing raw input into parsers
 		for _, parser := range s.parsers {
-			if err := parser(s, l); err != nil {
+			if err := parser(s, l, lineNumber); err != nil {
 				if err != errNotMatch {
-					return err
+					return &errInk{err, lineNumber}
 				}
 			} else {
 				break
@@ -454,7 +476,7 @@ func (s *Story) Parse(input string) error {
 func (s *Story) PostParsing() error {
 	for _, node := range s.paths {
 		if err := node.PostParsing(); err != nil {
-			return err
+			return &errInk{err, node.LN()}
 		}
 	}
 	return nil

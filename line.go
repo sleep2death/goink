@@ -23,7 +23,7 @@ var (
 )
 
 // readLine parse and insert a new inline into story
-func readLine(s *Story, input string) error {
+func readLine(s *Story, input string, ln int) error {
 	l, err := newLine(input)
 	if err != nil {
 		return err
@@ -45,6 +45,7 @@ func readLine(s *Story, input string) error {
 	}
 
 	l.story = s
+	l.ln = ln
 	l.parent = s.current
 
 	l.path = s.current.Path() + PathSplit + "i"
@@ -212,11 +213,12 @@ func (l *line) parseLabel() error {
 }
 
 // readGather create and insert a new gather into story
-func readGather(s *Story, input string) error {
+func readGather(s *Story, input string, ln int) error {
 	res := gatherReg.FindStringSubmatch(input)
 	if res != nil {
 		nesting := len(strings.Join(strings.Fields(res[1]), ""))
 		i, err := newLine(res[3])
+		i.ln = ln
 		if err != nil {
 			return err
 		}

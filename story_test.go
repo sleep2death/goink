@@ -92,6 +92,7 @@ func TestInvalidNextNode(t *testing.T) {
 	story = Default()
 	err = story.Parse(input)
 	assert.Nil(t, err)
+
 	err = story.PostParsing()
 	assert.Contains(t, err.Error(), "can not go next")
 
@@ -104,6 +105,7 @@ func TestInvalidNextNode(t *testing.T) {
 	story = Default()
 	err = story.Parse(input)
 	assert.Nil(t, err)
+
 	err = story.PostParsing()
 	assert.Nil(t, err)
 }

@@ -13,7 +13,7 @@ var (
 )
 
 // readOption parse and insert a new option into story
-func readOption(s *Story, input string) error {
+func readOption(s *Story, input string, ln int) error {
 	res := optsReg.FindStringSubmatch(input)
 
 	if res != nil {
@@ -22,6 +22,8 @@ func readOption(s *Story, input string) error {
 
 		// create new option
 		i, err := newLine(res[4])
+		i.ln = ln
+
 		if err != nil {
 			return err
 		}
@@ -42,7 +44,7 @@ func readOption(s *Story, input string) error {
 		}
 
 		if opts == nil {
-			opts = &options{base: &base{story: s, parent: s.current}, nesting: nesting}
+			opts = &options{base: &base{story: s, parent: s.current, ln: ln}, nesting: nesting}
 
 			opts.path = s.current.Path() + PathSplit + "c"
 			s.paths[opts.path] = opts
@@ -50,7 +52,7 @@ func readOption(s *Story, input string) error {
 			if n := s.next(); n != nil {
 				n.SetNext(opts)
 			} else {
-				return errors.Errorf("current node can not go next: [%s]", s.current.Path())
+				return errors.Errorf("node: [%s] can not go next", s.current.Path())
 			}
 		}
 

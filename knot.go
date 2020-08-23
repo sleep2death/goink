@@ -13,12 +13,12 @@ var (
 )
 
 // readKnot parse and insert a new knot into story
-func readKnot(s *Story, input string) error {
+func readKnot(s *Story, input string, ln int) error {
 	result := knotReg.FindStringSubmatch(input)
 	if result != nil {
 		name := strings.ToLower(result[3])
 
-		k := &knot{base: &base{story: s}, name: name}
+		k := &knot{base: &base{story: s, ln: ln}, name: name}
 		s.knots = append(s.knots, k)
 		k.path = name
 
@@ -92,7 +92,7 @@ func (k *knot) stitch(name string) *stitch {
 }
 
 // readStitch parse and insert a new knot into story
-func readStitch(s *Story, input string) error {
+func readStitch(s *Story, input string, ln int) error {
 	// = stitch
 	result := stitchReg.FindStringSubmatch(input)
 	if result != nil {
@@ -107,7 +107,7 @@ func readStitch(s *Story, input string) error {
 			return errors.Errorf("conflict stitch name: %s", name)
 		}
 
-		stitch := &stitch{base: &base{story: s}, name: name, knot: k}
+		stitch := &stitch{base: &base{story: s, ln: ln}, name: name, knot: k}
 		k.stitches = append(k.stitches, stitch)
 		s.current = stitch
 
