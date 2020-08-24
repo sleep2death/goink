@@ -120,10 +120,14 @@ editor.onDidChangeModelContent(function () {
         return resp.json()
       })
       .then((json) => {
-        console.log(json)
         if (json.error != null) {
-          showError('parsing error...')
-          addErrorMarkers(model, [json.error])
+          // if error is a line marker
+          if (json.error.ln != null) {
+            showError('parsing error...')
+            addErrorMarkers(model, [json.error])
+          } else {
+            showError(json.error)
+          }
         } else if (json.errors != null) {
           showError('parsing error...')
           addErrorMarkers(model, json.errors)
