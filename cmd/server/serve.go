@@ -33,7 +33,7 @@ func main() {
 		}
 
 		if err := story.PostParsing(); err != nil {
-			c.AbortWithStatusJSON(http.StatusOK, gin.H{"error": err.Error()})
+			c.AbortWithStatusJSON(http.StatusOK, gin.H{"errors": err})
 			return
 		}
 

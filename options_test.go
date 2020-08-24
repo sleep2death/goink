@@ -263,6 +263,6 @@ func TestOptionPostParsing(t *testing.T) {
 	err := story.Parse(input)
 	assert.Nil(t, err)
 
-	err = story.PostParsing()
-	assert.Contains(t, err.Error(), "can not find the divert")
+	errs := story.PostParsing()
+	assert.Contains(t, errs[0].Error(), "can not find the divert")
 }

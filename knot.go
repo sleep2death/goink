@@ -166,5 +166,6 @@ func (s *stitch) PostParsing() error {
 	if s.next == nil {
 		return errors.New("current stitch can not go next")
 	}
+
 	return nil
 }

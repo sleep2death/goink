@@ -129,8 +129,8 @@ func TestKnotAndStitchPostParsing(t *testing.T) {
 	err := story.Parse(input)
 	assert.Nil(t, err)
 
-	err = story.PostParsing()
-	assert.Contains(t, err.Error(), "can not go next")
+	errs := story.PostParsing()
+	assert.Contains(t, errs[0].Error(), "can not go next")
 
 	input = `
 	-> knot_a
@@ -143,6 +143,6 @@ func TestKnotAndStitchPostParsing(t *testing.T) {
 	err = story.Parse(input)
 	assert.Nil(t, err)
 
-	err = story.PostParsing()
-	assert.Contains(t, err.Error(), "can not go next")
+	errs = story.PostParsing()
+	assert.Contains(t, errs[0].Error(), "can not go next")
 }

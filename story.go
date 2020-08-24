@@ -474,11 +474,11 @@ func (s *Story) Parse(input string) error {
 }
 
 // PostParsing when all input parsing has done
-func (s *Story) PostParsing() error {
+func (s *Story) PostParsing() (err []error) {
 	for _, node := range s.paths {
-		if err := node.PostParsing(); err != nil {
-			return &errInk{err, node.LN()}
+		if e := node.PostParsing(); e != nil {
+			err = append(err, &errInk{e, node.LN()})
 		}
 	}
-	return nil
+	return err
 }
