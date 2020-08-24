@@ -24,8 +24,11 @@ monaco.languages.setMonarchTokensProvider('goink', {
   tokenizer: {
     root: [
       [/(ink|goink|inkle|inky)/, ['inky']],
-      [/^\/\/*.*/, 'comment'],
-      [/^\*\**/, 'keyword']
+      [/(end|End|END)/, ['inky']],
+      [/\/\/*.*/, 'comment'],
+      [/^\s*\*\**/, 'header'],
+      [/^\s*--*/, 'header'],
+      [/\s*->\s*/, 'header']
     ]
   }
 })
@@ -62,7 +65,10 @@ monaco.languages.setLanguageConfiguration('goink', {
 monaco.editor.defineTheme('goinkTheme', {
   base: 'vs',
   inherit: true,
-  rules: [{ token: 'inky', foreground: '202020', fontStyle: 'bold italic' }]
+  rules: [
+    { token: 'inky', foreground: '202020', fontStyle: 'bold italic' },
+    { token: 'header', foreground: '0366D6', fontStyle: 'bold' }
+  ]
 })
 
 const editor = monaco.editor.create(document.getElementById('editor'), {
@@ -76,11 +82,13 @@ const model = editor.getModel()
 function getCode () {
   return [
     '<goink ver 0.0.5-alpha>',
-    "This is a go rewrite of inkle's ink - ",
+    "This is a go rewrite of inkle's ink - https://github.com/inkle/ink ",
     'a scripting language for writing interactive narrative.',
     "// Let's get started!",
     '* Here is a simple option.',
-    "* Using '*' to add an option."
+    '* Using "*" to add an option.',
+    '- Gather line will be taken, when option runs out of content.',
+    'Every story go to the end line finally. -> end'
   ].join('\n')
 }
 
@@ -114,7 +122,7 @@ editor.onDidChangeModelContent(function () {
       })
       .then((json) => {
         if (json.error != null) {
-          showError('server parsing error')
+          showError('parsing error...')
 
           const res = json.error.match(lnReg)
           if (res[2] != null) {
@@ -138,7 +146,7 @@ editor.onDidChangeModelContent(function () {
         }
       })
       .catch(function () {
-        showError('can not fetch from server')
+        showError('can not fetch from server...')
       })
   }, 600)
 })
