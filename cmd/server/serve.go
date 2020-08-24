@@ -28,12 +28,13 @@ func main() {
 		story := goink.Default()
 
 		if err := story.Parse(json.Value); err != nil {
-			c.AbortWithStatusJSON(http.StatusOK, gin.H{"error": err.Error()})
+			c.AbortWithStatusJSON(http.StatusOK, gin.H{"error": err})
 			return
 		}
 
-		if err := story.PostParsing(); err != nil {
-			c.AbortWithStatusJSON(http.StatusOK, gin.H{"errors": err})
+		// may return multiple errors
+		if errs := story.PostParsing(); errs != nil {
+			c.AbortWithStatusJSON(http.StatusOK, gin.H{"errors": errs})
 			return
 		}
 

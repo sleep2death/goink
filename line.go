@@ -12,11 +12,12 @@ var (
 	tagReg     = regexp.MustCompile(`(^.*)(\#)(.+)$`)
 	divertReg  = regexp.MustCompile(`(^.*)(\-\>)(.+)$`)
 
-	glueStartReg = regexp.MustCompile(`^\<\>(.+)`)
-	glueEndReg   = regexp.MustCompile(`(.+)\<\>$`)
+	glueStartReg = regexp.MustCompile(`^\s*\<\>(.+)`)
+	glueEndReg   = regexp.MustCompile(`(.+)\<\>\s*$`)
 
-	gatherReg    = regexp.MustCompile(`^((-\s*)+)([^>].+)`)
-	labelReg     = regexp.MustCompile(`^\s*\((.+)\)(.*)`)
+	gatherReg = regexp.MustCompile(`^((-\s*)+)([^>].+)`)
+	labelReg  = regexp.MustCompile(`^\s*\((.+)\)(.*)`)
+
 	validNameReg = regexp.MustCompile(`^[a-zA-Z_]\w*$`)
 	validPathReg = regexp.MustCompile(`^[a-zA-Z_]\w*(\.\w+)*$`)
 	// illegalGatherReg = regexp.MustCompile(`\-\-\>`)
@@ -213,10 +214,11 @@ func readGather(s *Story, input string, ln int) error {
 	if res != nil {
 		nesting := len(strings.Join(strings.Fields(res[1]), ""))
 		i, err := newLine(res[3])
-		i.ln = ln
 		if err != nil {
 			return err
 		}
+
+		i.ln = ln
 
 		g := &gather{line: i, nesting: nesting}
 		g.story = s

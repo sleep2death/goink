@@ -107,7 +107,7 @@ func TestInvalidNextNode(t *testing.T) {
 	assert.Nil(t, err)
 
 	errs = story.PostParsing()
-	assert.Nil(t, err)
+	assert.Nil(t, errs)
 }
 
 func BenchmarkBasicStoryParsing(b *testing.B) {

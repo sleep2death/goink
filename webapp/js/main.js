@@ -102,7 +102,6 @@ editor.setPosition({
 })
 
 var timeout = null
-const lnReg = /^(.+)\sln:\s(\d+)/
 // send editor's content with delayed time
 editor.onDidChangeModelContent(function () {
   if (timeout != null) clearTimeout(timeout)
@@ -121,25 +120,13 @@ editor.onDidChangeModelContent(function () {
         return resp.json()
       })
       .then((json) => {
+        console.log(json)
         if (json.error != null) {
           showError('parsing error...')
-
-          const res = json.error.match(lnReg)
-          if (res[2] != null) {
-            const ln = parseInt(res[2])
-            // console.log('some error happens @line:', ln)
-            // set error marker
-            monaco.editor.setModelMarkers(model, '', [
-              {
-                severity: monaco.MarkerSeverity.Error,
-                message: res[1],
-                startColumn: 0,
-                startLineNumber: ln,
-                endColumn: 1000,
-                endLineNumber: ln
-              }
-            ])
-          }
+          addErrorMarkers(model, [json.error])
+        } else if (json.errors != null) {
+          showError('parsing error...')
+          addErrorMarkers(model, json.errors)
         } else {
           // clear markers
           monaco.editor.setModelMarkers(model, '', [])
@@ -160,4 +147,21 @@ function showError (error) {
     progressBar: false,
     text: error
   }).show()
+}
+
+function addErrorMarkers (model, errs) {
+  var markers = []
+  errs.forEach((e) => {
+    console.log(e)
+    markers.push({
+      severity: monaco.MarkerSeverity.Error,
+      message: e.msg,
+      startColumn: 0,
+      startLineNumber: e.ln,
+      endColumn: model.getLineMaxColumn(e.ln),
+      endLineNumber: e.ln
+    })
+  })
+
+  monaco.editor.setModelMarkers(model, '', markers)
 }

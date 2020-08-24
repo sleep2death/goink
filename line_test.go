@@ -156,3 +156,15 @@ func TestDivertJumping(t *testing.T) {
 	_, err = story.Resume(ctx)
 	assert.NotNil(t, err)
 }
+
+func TestDivertValidation(t *testing.T) {
+	input := `
+	invalid divert name -> end []
+	`
+
+	story := Default()
+	err := story.Parse(input)
+	assert.NotNil(t, err)
+
+	t.Log(err)
+}

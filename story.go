@@ -25,13 +25,13 @@ type Node interface {
 	LN() int
 }
 
-type errInk struct {
-	err error
-	ln  int
+type ErrInk struct {
+	LN     int    `json:"ln" binding:"required"`
+	ErrStr string `json:"msg" binding:"required"`
 }
 
-func (e *errInk) Error() string {
-	return e.err.Error() + " ln: " + strconv.Itoa(e.ln)
+func (e *ErrInk) Error() string {
+	return e.ErrStr + " ln: " + strconv.Itoa(e.LN)
 }
 
 // embeding struct which implements Node
@@ -462,7 +462,7 @@ func (s *Story) Parse(input string) error {
 		for _, parser := range s.parsers {
 			if err := parser(s, l, s.lineNumber); err != nil {
 				if err != errNotMatch {
-					return &errInk{err, s.lineNumber}
+					return &ErrInk{ErrStr: err.Error(), LN: s.lineNumber}
 				}
 			} else {
 				break
@@ -477,7 +477,7 @@ func (s *Story) Parse(input string) error {
 func (s *Story) PostParsing() (err []error) {
 	for _, node := range s.paths {
 		if e := node.PostParsing(); e != nil {
-			err = append(err, &errInk{e, node.LN()})
+			err = append(err, &ErrInk{node.LN(), e.Error()})
 		}
 	}
 	return err
