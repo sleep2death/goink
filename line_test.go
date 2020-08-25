@@ -165,6 +165,16 @@ func TestDivertValidation(t *testing.T) {
 	story := Default()
 	err := story.Parse(input)
 	assert.NotNil(t, err)
+}
 
-	t.Log(err)
+func TestCommentParsing(t *testing.T) {
+	input := `
+	a line with comment // http://www.sina.com
+	`
+
+	story := Default()
+	err := story.Parse(input)
+	assert.Nil(t, err)
+
+	t.Log(story.paths["start__i"].(*line).comment)
 }

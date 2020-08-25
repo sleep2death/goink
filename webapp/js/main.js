@@ -82,7 +82,7 @@ const model = editor.getModel()
 function getCode () {
   return [
     '<goink ver 0.0.5-alpha>',
-    "This is a go rewrite of inkle's ink - https://github.com/inkle/ink ",
+    "This is a go rewrite of inkle's ink // see: https://github.com/inkle/ink ",
     'a scripting language for writing interactive narrative.',
     "// Let's get started!",
     '* Here is a simple option.',
@@ -120,24 +120,28 @@ editor.onDidChangeModelContent(function () {
         return resp.json()
       })
       .then((json) => {
-        if (json.error != null) {
-          // if error is a line marker
-          if (json.error.ln != null) {
-            showError('parsing error...')
-            addErrorMarkers(model, [json.error])
-          } else {
-            showError(json.error)
-          }
-        } else if (json.errors != null) {
-          showError('parsing error...')
+        // if error is a line marker
+        if (json.errors != null) {
+          showError('story parsing error')
           addErrorMarkers(model, json.errors)
         } else {
           // clear markers
           monaco.editor.setModelMarkers(model, '', [])
+          if (json.result != null) {
+            const review = document.getElementById('review')
+            review.innerText = json.result.text
+            if (!json.result.end && json.result.opts) {
+              review.innerHTML += '<ul>'
+              json.result.opts.forEach((opt, idx) => {
+                review.innerHTML += `<li><a href="#" onclick="choose(${idx})">${opt}</a></li>`
+              })
+              review.innerHTML += '</ul>'
+            }
+          }
         }
       })
       .catch(function () {
-        showError('can not fetch from server...')
+        showError('can not fetch from server')
       })
   }, 600)
 })
@@ -156,16 +160,21 @@ function showError (error) {
 function addErrorMarkers (model, errs) {
   var markers = []
   errs.forEach((e) => {
-    console.log(e)
-    markers.push({
-      severity: monaco.MarkerSeverity.Error,
-      message: e.msg,
-      startColumn: 0,
-      startLineNumber: e.ln,
-      endColumn: model.getLineMaxColumn(e.ln),
-      endLineNumber: e.ln
-    })
+    if (e.ln > 0) {
+      markers.push({
+        severity: monaco.MarkerSeverity.Error,
+        message: e.msg,
+        startColumn: 0,
+        startLineNumber: e.ln,
+        endColumn: model.getLineMaxColumn(e.ln),
+        endLineNumber: e.ln
+      })
+    }
   })
 
   monaco.editor.setModelMarkers(model, '', markers)
+}
+
+window.choose = (idx) => {
+  console.log('choose:', idx)
 }

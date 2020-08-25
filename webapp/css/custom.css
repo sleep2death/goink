@@ -4,9 +4,10 @@
 
 .editor {
   margin: 2px;
+  padding: 2px;
   height: 800.08px;
 
-  border-style:solid;
-  border-color:darkgray;
-  border-width:1px;
+  border-style: solid;
+  border-color: darkgray;
+  border-width: 1px;
 }

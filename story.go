@@ -25,9 +25,16 @@ type Node interface {
 	LN() int
 }
 
+// ErrInk for transporting the error info
 type ErrInk struct {
 	LN     int    `json:"ln" binding:"required"`
 	ErrStr string `json:"msg" binding:"required"`
+}
+
+// Wrap errors
+func (e ErrInk) Wrap(err error) []error {
+	msg := ErrInk{LN: -1, ErrStr: err.Error()}
+	return []error{&msg}
 }
 
 func (e *ErrInk) Error() string {
@@ -102,7 +109,7 @@ type Story struct {
 	mux sync.Mutex
 
 	// current parsing line
-	lineNumber int
+	ln int
 }
 
 // Resume the story
@@ -356,11 +363,17 @@ type Section struct {
 }
 
 func (s *Section) add(text string, tags []string) {
-	if len(text) > 0 {
-		s.Text = s.Text + "\n" + text
+	if text != "" {
+		if s.Text != "" {
+			s.Text = s.Text + "\n" + text
+		} else {
+			s.Text = text
+		}
 	}
 
-	s.Tags = append(s.Tags, tags...)
+	if len(tags) > 0 {
+		s.Tags = append(s.Tags, tags...)
+	}
 }
 
 // Nodes list
@@ -404,7 +417,7 @@ func (s *start) Next() (Node, error) {
 }
 
 func (s *start) Render() (text string, tags []string) {
-	// text = "[start]"
+	text = ""
 	tags = append(tags, "START")
 	return
 }
@@ -414,7 +427,7 @@ type end struct {
 }
 
 func (e *end) End() (text string, tags []string) {
-	// text = "[start]"
+	text = ""
 	tags = append(tags, "END")
 	return
 }
@@ -434,7 +447,7 @@ func Default() *Story {
 
 	story.paths = make(map[string]Node)
 	story.vars = make(map[string]interface{})
-	story.lineNumber = 0
+	story.ln = 0
 
 	story.paths["start"] = s
 	story.paths["end"] = e
@@ -444,13 +457,13 @@ func Default() *Story {
 }
 
 // ParseFunc of the story
-type ParseFunc func(s *Story, input string, lineNumber int) error
+type ParseFunc func(s *Story, input string, ln int) error
 
 // Parse the input text
 func (s *Story) Parse(input string) error {
 	contents := strings.Split(input, "\n")
 	for _, line := range contents {
-		s.lineNumber++
+		s.ln++
 
 		// trim spaces and skip empty lines
 		l := strings.TrimRight(strings.TrimSpace(line), "\r\n")
@@ -460,9 +473,9 @@ func (s *Story) Parse(input string) error {
 
 		// passing raw input into parsers
 		for _, parser := range s.parsers {
-			if err := parser(s, l, s.lineNumber); err != nil {
+			if err := parser(s, l, s.ln); err != nil {
 				if err != errNotMatch {
-					return &ErrInk{ErrStr: err.Error(), LN: s.lineNumber}
+					return &ErrInk{ErrStr: err.Error(), LN: s.ln}
 				}
 			} else {
 				break

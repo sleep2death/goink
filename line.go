@@ -8,9 +8,9 @@ import (
 )
 
 var (
-	commentReg = regexp.MustCompile(`(^.*)(\/\/)(.+)$`)
-	tagReg     = regexp.MustCompile(`(^.*)(\#)(.+)$`)
-	divertReg  = regexp.MustCompile(`(^.*)(\-\>)(.+)$`)
+	commentReg = regexp.MustCompile(`^(.*?)\/\/(.*)`)
+	tagReg     = regexp.MustCompile(`^(.*)(\#)(.+)$`)
+	divertReg  = regexp.MustCompile(`^(.*)(\-\>)(.+)$`)
 
 	glueStartReg = regexp.MustCompile(`^\s*\<\>(.+)`)
 	glueEndReg   = regexp.MustCompile(`(.+)\<\>\s*$`)
@@ -70,7 +70,7 @@ func newLine(input string) (*line, error) {
 	// comment | spaces trimed
 	if res := commentReg.FindStringSubmatch(input); res != nil {
 		input = res[1]
-		i.comment = strings.TrimSpace(res[3])
+		i.comment = strings.TrimSpace(res[2])
 	}
 
 	// tags | spaces trimmed

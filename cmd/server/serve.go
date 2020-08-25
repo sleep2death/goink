@@ -21,14 +21,15 @@ func main() {
 	r.POST("/editor/onchange", func(c *gin.Context) {
 		var json editor
 		if err := c.ShouldBindJSON(&json); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			msg := (goink.ErrInk{}).Wrap(err)
+			c.JSON(http.StatusBadRequest, gin.H{"errors": msg})
 			return
 		}
 
 		story := goink.Default()
 
 		if err := story.Parse(json.Value); err != nil {
-			c.AbortWithStatusJSON(http.StatusOK, gin.H{"error": err})
+			c.AbortWithStatusJSON(http.StatusOK, gin.H{"errors": []error{err}})
 			return
 		}
 
@@ -42,11 +43,12 @@ func main() {
 		sec, err := story.Resume(ctx)
 
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusOK, gin.H{"error": err.Error()})
+			msg := (goink.ErrInk{}).Wrap(err)
+			c.JSON(http.StatusBadRequest, gin.H{"errors": msg})
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{"result": sec.Text})
+		c.JSON(http.StatusOK, gin.H{"result": sec})
 	})
 
 	// listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
