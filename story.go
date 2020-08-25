@@ -10,9 +10,8 @@ import (
 
 var (
 	// PathSplit of the node's path
-	PathSplit string = "__"
-
-	errNotMatch error = errors.New("RegExp Not Match")
+	PathSplit   string = "__"
+	errNotMatch error  = errors.New("RegExp Not Match")
 )
 
 // Node is the basic element of a story

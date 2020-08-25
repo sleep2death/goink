@@ -175,8 +175,7 @@ function onChange () {
       }
     })
     .catch(function (e) {
-      console.error(e)
-      showError('can not fetch from server')
+      showError('Oops, ' + e.toString())
     })
 }
 
