@@ -133,6 +133,8 @@ function addErrorMarkers (model, errs) {
         endColumn: model.getLineMaxColumn(e.ln),
         endLineNumber: e.ln
       })
+    } else {
+      showError(e.msg)
     }
   })
 
@@ -147,7 +149,7 @@ function onChange () {
     },
     body: JSON.stringify({
       value: editor.getValue(),
-      current: current
+      uuid: uuid
     })
   })
     .then((resp) => {
@@ -159,11 +161,18 @@ function onChange () {
         showError('story parsing error')
         addErrorMarkers(model, json.errors)
       } else {
+        // set uuid from server
+        if (uuid === '') {
+          uuid = json.uuid
+        } else if (uuid !== json.uuid) {
+          throw new Error('conflict user id from server')
+        }
         // clear markers
         monaco.editor.setModelMarkers(model, '', [])
+
         if (json.section != null) {
           const review = document.getElementById('review')
-          review.innerText = json.section.text
+          review.innerText += json.section.text
           if (!json.section.end && json.section.opts) {
             review.innerHTML += '<ul>'
             json.section.opts.forEach((opt, idx) => {
@@ -179,7 +188,7 @@ function onChange () {
     })
 }
 
-var current = 'start'
+var uuid = ''
 
 window.choose = (idx) => {
   console.log('choose:', idx)
