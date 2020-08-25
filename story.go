@@ -231,18 +231,18 @@ func (s *Story) visit(path string) error {
 
 // load from context
 func (s *Story) load(ctx *Context) error {
-	n, ok := s.paths[ctx.current]
+	n, ok := s.paths[ctx.Current]
 	if !ok {
-		return errors.Errorf("current path [%s] is not existed", ctx.current)
+		return errors.Errorf("current path [%s] is not existed", ctx.Current)
 	}
 
 	s.current = n
-	s.vars = ctx.vars
+	s.vars = ctx.Vars
 	return nil
 }
 
 func (s *Story) save() Context {
-	return Context{current: s.current.Path(), vars: copy(s.vars)}
+	return Context{Current: s.current.Path(), Vars: copy(s.vars), LN: s.current.LN()}
 }
 
 func copy(m map[string]interface{}) map[string]interface{} {
@@ -329,26 +329,18 @@ func (s *Story) divert(path string, from Node) Node {
 
 // Context of the story
 type Context struct {
-	current string
-	vars    map[string]interface{}
+	Current string                 `json:"current" binding:"required"`
+	LN      int                    `json:"ln" binding:"required"`
+	Vars    map[string]interface{} `json:"vars"`
 }
 
 // NewContext which starts from beginning with empty vars
 func NewContext() *Context {
 	return &Context{
-		current: "start",
-		vars:    make(map[string]interface{}),
+		Current: "start",
+		Vars:    make(map[string]interface{}),
+		LN:      0,
 	}
-}
-
-// Current path of the story
-func (c *Context) Current() string {
-	return c.current
-}
-
-// Vars of the story
-func (c *Context) Vars() map[string]interface{} {
-	return c.vars
 }
 
 // Section is rendered result of current story

@@ -11,7 +11,7 @@ func TestDefaultStory(t *testing.T) {
 	assert.Equal(t, story, story.current.Story())
 
 	ctx := story.save()
-	assert.Equal(t, "start", ctx.Current())
+	assert.Equal(t, "start", ctx.Current)
 
 	sec, err := story.Resume(&ctx)
 	assert.Nil(t, err)
@@ -35,7 +35,7 @@ func TestBasicParse(t *testing.T) {
 	assert.Nil(t, err)
 
 	assert.Equal(t, true, sec.End)
-	assert.Equal(t, "end", ctx.Current())
+	assert.Equal(t, "end", ctx.Current)
 	assert.Equal(t, 5, len(sec.Tags)) // 3 + start_tag + end_tag
 }
 
@@ -52,19 +52,19 @@ func TestStoryLoad(t *testing.T) {
 	assert.Nil(t, err)
 
 	ctx := NewContext()
-	ctx.current = "invalid path"
+	ctx.Current = "invalid path"
 	_, err = story.Resume(ctx)
 	assert.Contains(t, err.Error(), "is not existed")
 
 	_, err = story.Pick(ctx, 0)
 	assert.Contains(t, err.Error(), "is not existed")
 
-	ctx.current = "start"
+	ctx.Current = "start"
 	_, err = story.Pick(ctx, 0)
 	assert.Contains(t, err.Error(), "is not an option")
 
 	ctx = NewContext()
-	ctx.Vars()["start__i"] = "invalid vars"
+	ctx.Vars["start__i"] = "invalid vars"
 	_, err = story.Resume(ctx)
 	assert.Contains(t, err.Error(), "is not type of int")
 }

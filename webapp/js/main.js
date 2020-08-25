@@ -105,44 +105,8 @@ var timeout = null
 // send editor's content with delayed time
 editor.onDidChangeModelContent(function () {
   if (timeout != null) clearTimeout(timeout)
-
   timeout = setTimeout(function () {
-    fetch('http://localhost:9090/editor/onchange', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        value: editor.getValue()
-      })
-    })
-      .then((resp) => {
-        return resp.json()
-      })
-      .then((json) => {
-        // if error is a line marker
-        if (json.errors != null) {
-          showError('story parsing error')
-          addErrorMarkers(model, json.errors)
-        } else {
-          // clear markers
-          monaco.editor.setModelMarkers(model, '', [])
-          if (json.result != null) {
-            const review = document.getElementById('review')
-            review.innerText = json.result.text
-            if (!json.result.end && json.result.opts) {
-              review.innerHTML += '<ul>'
-              json.result.opts.forEach((opt, idx) => {
-                review.innerHTML += `<li><a href="#" onclick="choose(${idx})">${opt}</a></li>`
-              })
-              review.innerHTML += '</ul>'
-            }
-          }
-        }
-      })
-      .catch(function () {
-        showError('can not fetch from server')
-      })
+    onChange()
   }, 600)
 })
 
@@ -174,6 +138,49 @@ function addErrorMarkers (model, errs) {
 
   monaco.editor.setModelMarkers(model, '', markers)
 }
+
+function onChange () {
+  fetch('http://localhost:9090/editor/onchange', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      value: editor.getValue(),
+      current: current
+    })
+  })
+    .then((resp) => {
+      return resp.json()
+    })
+    .then((json) => {
+      // if error is a line marker
+      if (json.errors != null) {
+        showError('story parsing error')
+        addErrorMarkers(model, json.errors)
+      } else {
+        // clear markers
+        monaco.editor.setModelMarkers(model, '', [])
+        if (json.section != null) {
+          const review = document.getElementById('review')
+          review.innerText = json.section.text
+          if (!json.section.end && json.section.opts) {
+            review.innerHTML += '<ul>'
+            json.section.opts.forEach((opt, idx) => {
+              review.innerHTML += `<li><a href="#" onclick="choose(${idx})">${opt}</a></li>`
+            })
+            review.innerHTML += '</ul>'
+          }
+        }
+      }
+    })
+    .catch(function (e) {
+      console.error(e)
+      showError('can not fetch from server')
+    })
+}
+
+var current = 'start'
 
 window.choose = (idx) => {
   console.log('choose:', idx)

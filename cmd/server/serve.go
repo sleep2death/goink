@@ -10,7 +10,9 @@ import (
 )
 
 type editor struct {
-	Value string `json:"value" binding:"required"`
+	Value   string                 `json:"value" binding:"required"`
+	Current string                 `json:"current" binding:"required"`
+	Vars    map[string]interface{} `json:"vars"`
 }
 
 func main() {
@@ -33,7 +35,7 @@ func main() {
 			return
 		}
 
-		// may return multiple errors
+		// return multiple errors at once
 		if errs := story.PostParsing(); errs != nil {
 			c.AbortWithStatusJSON(http.StatusOK, gin.H{"errors": errs})
 			return
@@ -48,7 +50,7 @@ func main() {
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{"result": sec})
+		c.JSON(http.StatusOK, gin.H{"section": sec, "context": ctx})
 	})
 
 	// listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
