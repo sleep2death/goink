@@ -171,14 +171,15 @@ function onChange () {
         monaco.editor.setModelMarkers(model, '', [])
 
         if (json.section != null) {
-          const review = document.getElementById('review')
-          review.innerText += json.section.text
-          if (!json.section.end && json.section.opts) {
-            review.innerHTML += '<ul>'
+          const content = document.getElementById('content')
+          content.innerText = json.section.text
+
+          const options = document.getElementById('options')
+          options.innerHTML = ''
+          if (json.section.opts) {
             json.section.opts.forEach((opt, idx) => {
-              review.innerHTML += `<li><a href="#" onclick="choose(${idx})">${opt}</a></li>`
+              options.innerHTML += `<li><a href="#" onclick="choose(${idx})">${opt}</a></li>`
             })
-            review.innerHTML += '</ul>'
           }
         }
       }

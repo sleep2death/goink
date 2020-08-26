@@ -24,6 +24,24 @@ type Node interface {
 	LN() int
 }
 
+// End of story
+type End interface {
+	End() (text string, tags []string)
+}
+
+// Choices content - which has one/more option(s)
+type Choices interface {
+	Pick(idx int) (Node, error)
+	List() (text []string, tags [][]string)
+}
+
+// CanNext content - which can go next
+type CanNext interface {
+	Next() (Node, error)
+	SetNext(node Node)
+	Render() (text string, tags []string)
+}
+
 // ErrInk for transporting the error info
 type ErrInk struct {
 	LN     int    `json:"ln" binding:"required"`
@@ -71,24 +89,6 @@ func (b *base) LN() int {
 // do some post parsing check
 func (b *base) PostParsing() error {
 	return nil
-}
-
-// End of story
-type End interface {
-	End() (text string, tags []string)
-}
-
-// Choices content - which has one/more option(s)
-type Choices interface {
-	Pick(idx int) (Node, error)
-	List() (text []string, tags [][]string)
-}
-
-// CanNext content - which can go next
-type CanNext interface {
-	Next() (Node, error)
-	SetNext(node Node)
-	Render() (text string, tags []string)
 }
 
 // Story of the ink
