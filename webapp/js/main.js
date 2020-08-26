@@ -1,5 +1,4 @@
 import 'bulma/css/bulma.css'
-
 import * as monaco from 'monaco-editor'
 
 import Noty from 'noty'
@@ -167,16 +166,27 @@ function onChange () {
         } else if (uuid !== json.uuid) {
           throw new Error('conflict user id from server')
         }
+        //
         // clear markers
         monaco.editor.setModelMarkers(model, '', [])
-
         if (json.section != null) {
           const content = document.getElementById('content')
-          content.innerText = json.section.text
+          content.innerHTML = ''
+
+          const c = document.createElement('div')
+          c.innerText = json.section.text
+          content.appendChild(c)
 
           const options = document.getElementById('options')
+
           options.innerHTML = ''
           if (json.section.opts) {
+            // add separator
+            const sep = document.createElement('div')
+            sep.className = 'separator'
+            sep.innerText = 'Options'
+            content.appendChild(sep)
+
             json.section.opts.forEach((opt, idx) => {
               options.innerHTML += `<li><a href="#" onclick="choose(${idx})">${opt}</a></li>`
             })
@@ -192,5 +202,72 @@ function onChange () {
 var uuid = ''
 
 window.choose = (idx) => {
-  console.log('choose:', idx)
+  fetch('http://localhost:9090/review/onchoose', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      uuid: uuid,
+      index: parseInt(idx)
+    })
+  })
+    .then((resp) => {
+      return resp.json()
+    })
+    .then((json) => {
+      // if error is a line marker
+      if (json.errors != null) {
+        showError('story parsing error')
+        addErrorMarkers(model, json.errors)
+      } else {
+        // set uuid from server
+        if (uuid !== json.uuid) {
+          throw new Error('conflict user id from server')
+        }
+        // clear markers
+        monaco.editor.setModelMarkers(model, '', [])
+
+        if (json.section != null) {
+          const content = document.getElementById('content')
+
+          const seps = content.getElementsByClassName('separator')
+
+          for (let i = 0; i < seps.length; i++) {
+            seps[i].innerText = '-'
+          }
+
+          const c = document.createElement('div')
+          c.innerText = json.section.text
+          content.appendChild(c)
+
+          const options = document.getElementById('options')
+          options.innerHTML = ''
+
+          if (json.section.opts) {
+            // add separator
+            const sep = document.createElement('div')
+            sep.className = 'separator'
+            sep.innerText = 'Options'
+            content.appendChild(sep)
+
+            json.section.opts.forEach((opt, idx) => {
+              options.innerHTML += `<li><a href="#" onclick="choose(${idx})">${opt}</a></li>`
+            })
+          } else if (json.section.end) {
+            const end = document.getElementById('end')
+            end.classList.remove('hidden')
+            /* const sep = document.createElement('div')
+            sep.className = 'separator'
+            sep.innerText = 'THE END'
+            options.parentElement.appendChild(sep) */
+          }
+        }
+      }
+    })
+    .catch(function (e) {
+      showError('Oops, ' + e.toString())
+    })
 }
+
+onChange()

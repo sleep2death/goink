@@ -20,6 +20,11 @@ type editor struct {
 	Uuid  string `json:"uuid"`
 }
 
+type review struct {
+	Uuid  string `json:"uuid" binding:"required"`
+	Index *int   `json:"Index" binding:"required"`
+}
+
 type user struct {
 	id    string
 	story *goink.Story
@@ -117,7 +122,7 @@ func getChangeHandler(cc *cache.Cache) gin.HandlerFunc {
 
 func getChooseHandler(cc *cache.Cache) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var json editor
+		var json review
 		// bind json
 		if err := c.ShouldBindJSON(&json); err != nil {
 			msg := (goink.ErrInk{}).Wrap(err)
@@ -154,5 +159,16 @@ func getChooseHandler(cc *cache.Cache) gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"errors": msg})
 			return
 		}
+
+		sec, err := store.story.Pick(store.ctx, *json.Index)
+
+		// TODO: resume error wrap with line number
+		if err != nil {
+			msg := (goink.ErrInk{}).Wrap(err)
+			c.JSON(http.StatusOK, gin.H{"errors": msg})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"section": sec, "uuid": id})
 	}
 }
