@@ -38,7 +38,7 @@ func main() {
 	r.POST("/editor/onchange", getChangeHandler(cc))
 
 	// when user select an option in review panel
-	r.POST("/editor/onchange", getChooseHandler(cc))
+	r.POST("/review/onchoose", getChooseHandler(cc))
 
 	// listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
 	if err := r.Run(":9090"); err != nil {
@@ -150,10 +150,9 @@ func getChooseHandler(cc *cache.Cache) gin.HandlerFunc {
 			log.Info("An user has selected his(hers) ink's option")
 			// fmt.Println("old user", store.ctx.Current)
 		} else { // set new user
-			store = &user{id: id, ctx: goink.NewContext()}
-			cc.Set(id, store, cache.DefaultExpiration)
-			// fmt.Println("new user")
-			log.Info("A [New] user has updated his(hers) ink")
+			msg := (goink.ErrInk{}).Wrap(errors.New("invalid user id"))
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"errors": msg})
+			return
 		}
 	}
 }
