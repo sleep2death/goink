@@ -187,9 +187,15 @@ function onChange () {
             sep.innerText = 'Options'
             content.appendChild(sep)
 
+            const end = document.getElementById('end')
+            end.classList.add('hidden')
+
             json.section.opts.forEach((opt, idx) => {
               options.innerHTML += `<li><a href="#" onclick="choose(${idx})">${opt}</a></li>`
             })
+          } else if (json.section.end) {
+            const end = document.getElementById('end')
+            end.classList.remove('hidden')
           }
         }
       }
@@ -250,6 +256,9 @@ window.choose = (idx) => {
             sep.className = 'separator'
             sep.innerText = 'Options'
             content.appendChild(sep)
+
+            const end = document.getElementById('end')
+            end.classList.add('hidden')
 
             json.section.opts.forEach((opt, idx) => {
               options.innerHTML += `<li><a href="#" onclick="choose(${idx})">${opt}</a></li>`
