@@ -360,8 +360,25 @@ type Section struct {
 
 func (s *Section) add(text string, tags []string) {
 	if text != "" {
+		var tail, header bool
+		// glue header
+		if res := glueStartReg.FindStringSubmatch(text); res != nil {
+			text = res[1]
+			header = true
+		}
+
 		if s.Text != "" {
-			s.Text = s.Text + "\n" + text
+			// glue tail
+			if res := glueEndReg.FindStringSubmatch(s.Text); res != nil {
+				s.Text = res[1]
+				tail = true
+			}
+
+			if tail || header {
+				s.Text = s.Text + text
+			} else {
+				s.Text = s.Text + "\n" + text
+			}
 		} else {
 			s.Text = text
 		}

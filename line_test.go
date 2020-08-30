@@ -1,6 +1,7 @@
 package goink
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -26,10 +27,10 @@ func TestLineParsing(t *testing.T) {
 	assert.Equal(t, 3, len(l1.tags))
 	assert.Equal(t, "tag a", l1.tags[0])
 
-	l2, ok := story.paths["start__i__i"].(*line)
+	_, ok := story.paths["start__i__i"].(*line)
 	assert.True(t, ok)
-	assert.True(t, l2.glueStart)
-	assert.True(t, l2.glueEnd)
+	// assert.True(t, l2.glueStart)
+	// assert.True(t, l2.glueEnd)
 }
 
 func TestLabelParsing(t *testing.T) {
@@ -173,4 +174,46 @@ func TestCommentParsing(t *testing.T) {
 	assert.Nil(t, err)
 
 	t.Log(story.paths["start__i"].(*line).comment)
+}
+
+func TestGlueRendering(t *testing.T) {
+	input := `
+	this is a tail glue <>
+	this is the second line.
+	-> end
+	`
+
+	story := Default()
+	err := story.Parse(input)
+	assert.Nil(t, err)
+
+	e := story.PostParsing()
+	assert.Nil(t, e)
+
+	ctx := NewContext()
+	sec, errs := story.Resume(ctx)
+	assert.Nil(t, errs)
+
+	assert.Equal(t, 1, len(strings.Split(sec.Text, "\n")))
+	t.Log(sec.Text)
+
+	input = `
+	this is a tail glue
+	<> this is the second line.
+	-> end
+	`
+
+	story = Default()
+	err = story.Parse(input)
+	assert.Nil(t, err)
+
+	e = story.PostParsing()
+	assert.Nil(t, e)
+
+	ctx = NewContext()
+	sec, errs = story.Resume(ctx)
+	assert.Nil(t, errs)
+
+	assert.Equal(t, 1, len(strings.Split(sec.Text, "\n")))
+	t.Log(sec.Text)
 }

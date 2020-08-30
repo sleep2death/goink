@@ -97,8 +97,8 @@ func newLine(input string) (*line, error) {
 		i.divert = strings.ToLower(strings.TrimSpace(res[3]))
 	}
 
-	// glue
-	if res := glueStartReg.FindStringSubmatch(input); res != nil {
+	// handle glue at rendering action
+	/* if res := glueStartReg.FindStringSubmatch(input); res != nil {
 		i.glueStart = true
 		input = res[1]
 	}
@@ -106,7 +106,7 @@ func newLine(input string) (*line, error) {
 	if res := glueEndReg.FindStringSubmatch(input); res != nil {
 		i.glueEnd = true
 		input = res[1]
-	}
+	} */
 
 	// text | spaces not trimmed
 	i.text = input
@@ -127,17 +127,20 @@ type line struct {
 	tags    []string
 	divert  string
 
-	glueStart bool
-	glueEnd   bool
+	// glueStart bool
+	// glueEnd   bool
 
 	text string
 }
 
 // PostParsing of line
 func (l *line) PostParsing() error {
-	if n, err := l.Next(); n == nil {
+	if n, err := l.Next(); err != nil {
 		return err
+	} else if n == nil {
+		return errors.New("next content is nil")
 	}
+
 	return nil
 }
 
