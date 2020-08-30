@@ -217,3 +217,19 @@ func TestGlueRendering(t *testing.T) {
 	assert.Equal(t, 1, len(strings.Split(sec.Text, "\n")))
 	t.Log(sec.Text)
 }
+
+func TestVariableParsing(t *testing.T) {
+	input := `
+	VAR a = 123
+	VAR b = false
+	var  c="hello world"
+	`
+
+	story := Default()
+	err := story.Parse(input)
+	assert.Nil(t, err)
+
+	assert.Equal(t, story.vars["a"], 123)
+	assert.Equal(t, story.vars["b"], false)
+	assert.Equal(t, story.vars["c"], "hello world")
+}

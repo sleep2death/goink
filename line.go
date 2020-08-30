@@ -2,6 +2,7 @@ package goink
 
 import (
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -11,6 +12,8 @@ var (
 	commentReg = regexp.MustCompile(`^(.*?)\/\/(.*)`)
 	tagReg     = regexp.MustCompile(`^(.*)(\#)(.+)$`)
 	divertReg  = regexp.MustCompile(`^(.*)(\-\>)(.+)$`)
+	varReg     = regexp.MustCompile(`^\s*(VAR|var)\s+([_a-z]\w*)\s*\=\s*(.+)$`)
+	strReg     = regexp.MustCompile(`\"(.+)\"`)
 
 	glueStartReg = regexp.MustCompile(`^\s*\<\>(.+)`)
 	glueEndReg   = regexp.MustCompile(`(.+)\<\>\s*$`)
@@ -270,4 +273,43 @@ func readGather(s *Story, input string, ln int) error {
 type gather struct {
 	*line
 	nesting int
+}
+
+// readVariable from input
+func readVariable(s *Story, input string, ln int) error {
+	res := varReg.FindStringSubmatch(input)
+
+	if res != nil {
+		name := res[2]
+		value := res[3]
+
+		// string
+		if re := strReg.FindStringSubmatch(value); re != nil {
+			value = re[1]
+			s.vars[name] = value
+			return nil
+		}
+
+		// bool
+		if b, err := strconv.ParseBool(value); err == nil {
+			s.vars[name] = b
+			return nil
+		}
+
+		// int
+		if i, err := strconv.Atoi(value); err == nil {
+			s.vars[name] = i
+			return nil
+		}
+
+		// float
+		if f, err := strconv.ParseFloat(value, 32); err == nil {
+			s.vars[name] = f
+			return nil
+		}
+
+		return errors.Errorf("value is not recgonized: %s", value)
+	}
+
+	return errNotMatch
 }

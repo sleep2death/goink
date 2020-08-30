@@ -447,7 +447,7 @@ func (e *end) End() (text string, tags []string) {
 
 // Default story
 func Default() *Story {
-	parsers := []ParseFunc{readKnot, readStitch, readOption, readGather, readLine}
+	parsers := []ParseFunc{readVariable, readKnot, readStitch, readOption, readGather, readLine}
 
 	s := &start{base: &base{path: "start"}}
 	e := &end{base: &base{path: "end"}}
