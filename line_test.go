@@ -223,6 +223,7 @@ func TestVariableParsing(t *testing.T) {
 	VAR a = 123
 	VAR b = false
 	var  c="hello world"
+	var  d = 3.134
 	`
 
 	story := Default()
@@ -232,4 +233,14 @@ func TestVariableParsing(t *testing.T) {
 	assert.Equal(t, story.vars["a"], 123)
 	assert.Equal(t, story.vars["b"], false)
 	assert.Equal(t, story.vars["c"], "hello world")
+	assert.Equal(t, story.vars["d"], 3.134)
+	assert.Equal(t, story.vars["e"], nil)
+
+	input = `
+	var  e = 3.-134
+	`
+
+	story = Default()
+	err = story.Parse(input)
+	assert.Contains(t, err.Error(), "not recgonized")
 }

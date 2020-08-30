@@ -303,7 +303,7 @@ func readVariable(s *Story, input string, ln int) error {
 		}
 
 		// float
-		if f, err := strconv.ParseFloat(value, 32); err == nil {
+		if f, err := strconv.ParseFloat(value, 64); err == nil {
 			s.vars[name] = f
 			return nil
 		}
