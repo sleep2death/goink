@@ -44,18 +44,22 @@ type CanNext interface {
 
 // ErrInk for transporting the error info
 type ErrInk struct {
-	LN     int    `json:"ln" binding:"required"`
-	ErrStr string `json:"msg" binding:"required"`
+	LN      int    `json:"ln" binding:"required"`
+	Message string `json:"msg" binding:"required"`
 }
 
 // Wrap errors
 func (e ErrInk) Wrap(err error) []error {
-	msg := ErrInk{LN: -1, ErrStr: err.Error()}
+	msg := ErrInk{LN: -1, Message: err.Error()}
 	return []error{&msg}
 }
 
+func wrapError(err error, ln int) *ErrInk {
+	return &ErrInk{LN: ln, Message: err.Error()}
+}
+
 func (e *ErrInk) Error() string {
-	return e.ErrStr + " ln: " + strconv.Itoa(e.LN)
+	return e.Message + " ln: " + strconv.Itoa(e.LN)
 }
 
 // embeding struct which implements Node
@@ -112,12 +116,12 @@ type Story struct {
 }
 
 // Resume the story
-func (s *Story) Resume(ctx *Context) (sec *Section, err error) {
+func (s *Story) Resume(ctx *Context) (sec *Section, err *ErrInk) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
 	if err := s.load(ctx); err != nil {
-		return nil, err
+		return nil, wrapError(err, -1)
 	}
 
 	if sec, err = s.resume(); err != nil {
@@ -130,15 +134,17 @@ func (s *Story) Resume(ctx *Context) (sec *Section, err error) {
 }
 
 // Pick the option
-func (s *Story) Pick(ctx *Context, idx int) (sec *Section, err error) {
+func (s *Story) Pick(ctx *Context, idx int) (sec *Section, err *ErrInk) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
 	if err := s.load(ctx); err != nil {
-		return nil, err
+		return nil, wrapError(err, -1)
 	}
 
-	sec, err = s.pick(idx)
+	if sec, err = s.pick(idx); err != nil {
+		return nil, err
+	}
 	// update ctx
 	*ctx = s.save()
 	return
@@ -150,17 +156,17 @@ func (s *Story) SetID(id string) {
 }
 
 // resume the story
-func (s *Story) resume() (sec *Section, err error) {
+func (s *Story) resume() (sec *Section, err *ErrInk) {
 	var ns nodes
 loop:
 	for {
 		if s.current == nil {
-			return nil, errors.New("current node is nil")
+			return nil, wrapError(errors.New("current node is nil"), -1)
 		}
 
 		ns = append(ns, s.current)
 		if err := s.visit(s.current.Path()); err != nil {
-			return nil, err
+			return nil, wrapError(err, s.current.LN())
 		}
 
 		switch node := s.current.(type) {
@@ -171,11 +177,11 @@ loop:
 		case CanNext:
 			n, err := node.Next()
 			if err != nil {
-				return nil, err
+				return nil, wrapError(err, s.current.LN())
 			}
 			s.current = n
 		default:
-			return nil, errors.New("current line is not recgonized")
+			return nil, wrapError(errors.New("current line is not recgonized"), -1)
 		}
 	}
 
@@ -184,17 +190,16 @@ loop:
 
 // pick one of the current choices' option,
 // and resume
-func (s *Story) pick(idx int) (sec *Section, err error) {
-	var opt Node
+func (s *Story) pick(idx int) (sec *Section, erri *ErrInk) {
 	if c := s.choices(); c != nil {
-		if opt, err = c.Pick(idx); err != nil {
-			return nil, err
+		if opt, err := c.Pick(idx); err != nil {
+			return nil, wrapError(err, c.(Node).LN())
+		} else {
+			s.current = opt
+			return s.resume()
 		}
-		s.current = opt
-		return s.resume()
 	}
-
-	return nil, errors.New("current line is not an option")
+	return nil, wrapError(errors.New("current line is not an option"), s.current.LN())
 }
 
 func (s *Story) next() CanNext {
@@ -451,7 +456,7 @@ func Default() *Story {
 type ParseFunc func(s *Story, input string, ln int) error
 
 // Parse the input text
-func (s *Story) Parse(input string) error {
+func (s *Story) Parse(input string) *ErrInk {
 	contents := strings.Split(input, "\n")
 	for _, line := range contents {
 		s.ln++
@@ -466,7 +471,7 @@ func (s *Story) Parse(input string) error {
 		for _, parser := range s.parsers {
 			if err := parser(s, l, s.ln); err != nil {
 				if err != errNotMatch {
-					return &ErrInk{ErrStr: err.Error(), LN: s.ln}
+					return wrapError(err, s.ln)
 				}
 			} else {
 				break
@@ -478,11 +483,11 @@ func (s *Story) Parse(input string) error {
 }
 
 // PostParsing when all input parsing has done
-func (s *Story) PostParsing() (err []error) {
+func (s *Story) PostParsing() (errs []*ErrInk) {
 	for _, node := range s.paths {
 		if e := node.PostParsing(); e != nil {
-			err = append(err, &ErrInk{node.LN(), e.Error()})
+			errs = append(errs, wrapError(e, node.LN()))
 		}
 	}
-	return err
+	return
 }

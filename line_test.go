@@ -114,9 +114,7 @@ func TestLabelParsing(t *testing.T) {
 }
 
 func TestDivertParsing(t *testing.T) {
-	input := `
-	go to invalid divert -> divert
-	`
+	input := `go to invalid divert -> divert`
 
 	story := Default()
 	err := story.Parse(input)
@@ -124,11 +122,9 @@ func TestDivertParsing(t *testing.T) {
 
 	ctx := NewContext()
 	_, err = story.Resume(ctx)
-	assert.Equal(t, "can not find the divert: divert", err.Error())
+	assert.Equal(t, "can not find the divert: divert ln: 1", err.Error())
 
-	input = `
-	go to invalid divert -> invalid divert
-	`
+	input = `go to invalid divert -> invalid divert`
 
 	story = Default()
 	err = story.Parse(input)

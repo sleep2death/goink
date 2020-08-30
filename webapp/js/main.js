@@ -123,7 +123,7 @@ function showError (error) {
 function addErrorMarkers (model, errs) {
   var markers = []
   errs.forEach((e) => {
-    if (e.ln > 0) {
+    if (e.ln != null && e.ln > 0) {
       markers.push({
         severity: monaco.MarkerSeverity.Error,
         message: e.msg,
@@ -136,6 +136,24 @@ function addErrorMarkers (model, errs) {
       showError(e.msg)
     }
   })
+
+  monaco.editor.setModelMarkers(model, '', markers)
+}
+
+function addErrorMarker (model, e) {
+  var markers = []
+  if (e.ln != null && e.ln > 0) {
+    markers.push({
+      severity: monaco.MarkerSeverity.Error,
+      message: e.msg,
+      startColumn: 0,
+      startLineNumber: e.ln,
+      endColumn: model.getLineMaxColumn(e.ln),
+      endLineNumber: e.ln
+    })
+  } else {
+    showError(e.msg)
+  }
 
   monaco.editor.setModelMarkers(model, '', markers)
 }
@@ -159,6 +177,9 @@ function onChange () {
       if (json.errors != null) {
         showError('story parsing error')
         addErrorMarkers(model, json.errors)
+      } else if (json.error != null) {
+        showError('story parsing error')
+        addErrorMarker(model, json.error)
       } else {
         // set uuid from server
         if (uuid === '') {
@@ -169,6 +190,7 @@ function onChange () {
         //
         // clear markers
         monaco.editor.setModelMarkers(model, '', [])
+
         if (json.section != null) {
           const content = document.getElementById('content')
           content.innerHTML = ''
@@ -223,9 +245,13 @@ window.choose = (idx) => {
     })
     .then((json) => {
       // if error is a line marker
+      // if error is a line marker
       if (json.errors != null) {
         showError('story parsing error')
         addErrorMarkers(model, json.errors)
+      } else if (json.error != null) {
+        showError('story parsing error')
+        addErrorMarker(model, json.errors)
       } else {
         // set uuid from server
         if (uuid !== json.uuid) {

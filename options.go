@@ -9,7 +9,9 @@ import (
 )
 
 var (
-	optsReg = regexp.MustCompile(`(^(\+\s*)+|^(\*\s*)+)(.+)`)
+	optsReg       = regexp.MustCompile(`(^(\+\s*)+|^(\*\s*)+)(.+)`)
+	exprReg       = regexp.MustCompile(`\{(.+)\}(.*)`)
+	supressingReg = regexp.MustCompile(`(^.*)\[(.*)\](.*$)`)
 )
 
 // readOption parse and insert a new option into story
@@ -181,10 +183,7 @@ type opt struct {
 	condition *exprc
 }
 
-var (
-	exprReg       = regexp.MustCompile(`^\s*\{(.+)\}(.*)`)
-	supressingReg = regexp.MustCompile(`(^.*)\[(.*)\](.*$)`)
-)
+var ()
 
 // render option text with supressing
 func (o *opt) render(supressing bool) string {

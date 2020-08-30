@@ -56,8 +56,7 @@ func getChangeHandler(cc *cache.Cache) gin.HandlerFunc {
 		var json editor
 		// bind json
 		if err := c.ShouldBindJSON(&json); err != nil {
-			msg := (goink.ErrInk{}).Wrap(err)
-			c.JSON(http.StatusBadRequest, gin.H{"errors": msg})
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
@@ -66,8 +65,7 @@ func getChangeHandler(cc *cache.Cache) gin.HandlerFunc {
 		if json.Uuid == "" {
 			id = uuid.NewV4().String()
 		} else if _, err := uuid.FromString(json.Uuid); err != nil {
-			msg := (goink.ErrInk{}).Wrap(err)
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"errors": msg})
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		} else {
 			// get id from client
@@ -94,7 +92,7 @@ func getChangeHandler(cc *cache.Cache) gin.HandlerFunc {
 		// create story
 		story := goink.Default()
 		if err := story.Parse(json.Value); err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"errors": []error{err}})
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err})
 			return
 		}
 
