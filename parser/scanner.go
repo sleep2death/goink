@@ -161,10 +161,94 @@ func (s *scanner) errorf(offs int, format string, args ...interface{}) {
 	s.error(offs, fmt.Sprintf(format, args...))
 }
 
-func (s *scanner) scanRaw() string {
+func (s *scanner) scanComment() string {
+	// initial '/' already consumed; s.ch == '/' || s.ch == '*'
+	offs := s.offset - 1 // position of initial '/'
+	next := -1           // position immediately following the comment; < 0 means invalid comment
+	numCR := 0
+
+	if s.ch == '/' {
+		//-style comment
+		// (the final '\n' is not considered part of the comment)
+		s.next()
+		for s.ch != '\n' && s.ch >= 0 {
+			if s.ch == '\r' {
+				numCR++
+			}
+			s.next()
+		}
+		// if we are at '\n', the position following the comment is afterwards
+		next = s.offset
+		if s.ch == '\n' {
+			next++
+		}
+		goto exit
+	}
+
+	/*-style comment */
+	s.next()
+	for s.ch >= 0 {
+		ch := s.ch
+		if ch == '\r' {
+			numCR++
+		}
+		s.next()
+		if ch == '*' && s.ch == '/' {
+			s.next()
+			next = s.offset
+			goto exit
+		}
+	}
+
+	s.error(offs, "comment not terminated")
+
+exit:
+	lit := s.src[offs:s.offset]
+
+	// On Windows, a (//-comment) line may end in "\r\n".
+	// Remove the final '\r' before analyzing the text for
+	// line directives (matching the compiler). Remove any
+	// other '\r' afterwards (matching the pre-existing be-
+	// havior of the scanner).
+	if numCR > 0 && len(lit) >= 2 && lit[1] == '/' && lit[len(lit)-1] == '\r' {
+		lit = lit[:len(lit)-1]
+		numCR--
+	}
+
+	// interpret line directives
+	// (//line directives must start at the beginning of the current line)
+	/* if next >= 0 && (lit[1] == '*' || offs == s.lineOffset) && bytes.HasPrefix(lit[2:], prefix) {
+		s.updateLineInfo(next, offs, lit)
+	} */
+
+	if numCR > 0 {
+		lit = stripCR(lit, lit[1] == '*')
+	}
+
+	return string(lit)
+}
+
+func stripCR(b []byte, comment bool) []byte {
+	c := make([]byte, len(b))
+	i := 0
+	for j, ch := range b {
+		// In a /*-style comment, don't strip \r from *\r/ (incl.
+		// sequences of \r from *\r\r...\r/) since the resulting
+		// */ would terminate the comment too early unless the \r
+		// is immediately following the opening /* in which case
+		// it's ok because /*/ is not closed yet (issue #11151).
+		if ch != '\r' || comment && i > len("/*") && c[i-1] == '*' && j+1 < len(b) && b[j+1] == '/' {
+			c[i] = ch
+			i++
+		}
+	}
+	return c[:i]
+}
+
+func (s *scanner) scanString() string {
 	offs := s.offset
 	numCR := 0
-	for !isStringBreaker(s.ch) && s.ch >= 0 {
+	for !isLineBreaker(s.ch) && s.ch >= 0 {
 		if s.ch == '\r' {
 			numCR++
 		}
@@ -200,21 +284,104 @@ func (s *scanner) scan() (pos pos, tok token, lit string) {
 
 	// current token start
 	pos = s.pos(s.offset)
-	switch ch := s.ch; {
-	case !isLineHeader(ch):
+
+	ch := s.ch
+	s.next()
+
+	switch ch {
+	case -1:
+		if s.insertSemi {
+			s.insertSemi = false // EOF consumed
+			return pos, SEMICOLON, "\n"
+		}
+		tok = EOF
+	case '\n':
+		// we only reach here if s.insertSemi was
+		// set in the first place and exited early
+		// from s.skipWhitespace()
+		s.insertSemi = false // newline consumed
+		return pos, SEMICOLON, "\n"
+	case '/':
+		if s.ch == '/' || s.ch == '*' {
+			// comment
+			if s.insertSemi && s.findLineEnd() {
+				// reset position to the beginning of the comment
+				s.ch = '/'
+				s.offset = int(pos)
+				s.rdOffset = s.offset + 1
+				s.insertSemi = false // newline consumed
+				return pos, SEMICOLON, "\n"
+			}
+			comment := s.scanComment()
+			tok = COMMENT
+			lit = comment
+		} else {
+			tok = CHAR
+			lit = string(ch)
+		}
+	case '#': // tag
+	case '{': // expr
+	case '(': // label
+	case '[': // knot
+	case '>': // divert
+	case '-': // gather
+	case '+': // sticky option
+	case '*': // once-only option
 	default:
+		lit = string(ch) + s.scanString()
+		tok = STRING
 	}
 
 	return
 }
 
 func isLineBreaker(ch rune) bool {
-	// tag | comment | divert | newline | expr
-	return ch == '#' || ch == '/' || ch == '-' || ch == '\n' || ch == '{'
+	// tag | comment | divert | expr | eof
+	return ch == '#' || ch == '/' || ch == '>' || ch == '{' || ch == -1
 }
 
-func isLineHeader(ch rune) bool {
-	return ch == '*' || ch == '+' || ch == '-' || ch == '/' || ch == '=' || ch == '{' || ch == '('
+func (s *scanner) findLineEnd() bool {
+	// initial '/' already consumed
+
+	defer func(offs int) {
+		// reset scanner state to where it was upon calling findLineEnd
+		s.ch = '/'
+		s.offset = offs
+		s.rdOffset = offs + 1
+		s.next() // consume initial '/' again
+	}(s.offset - 1)
+
+	// read ahead until a newline, EOF, or non-comment token is found
+	for s.ch == '/' || s.ch == '*' {
+		if s.ch == '/' {
+			//-style comment always contains a newline
+			return true
+		}
+		/*-style comment: look for newline */
+		s.next()
+		for s.ch >= 0 {
+			ch := s.ch
+			if ch == '\n' {
+				return true
+			}
+			s.next()
+			if ch == '*' && s.ch == '/' {
+				s.next()
+				break
+			}
+		}
+		s.skipWhitespace() // s.insertSemi is set
+		if s.ch < 0 || s.ch == '\n' {
+			return true
+		}
+		if s.ch != '/' {
+			// non-comment token
+			return false
+		}
+		s.next() // consume '/'
+	}
+
+	return false
 }
 
 func isLetter(ch rune) bool {
@@ -304,7 +471,9 @@ const (
 	EOF
 	COMMENT
 
+	SEMICOLON // ;
 	STRING
+	CHAR
 
 	TAG   // #
 	EXPR  // {}
@@ -320,7 +489,9 @@ var tokens = [...]string{
 	EOF:     "EOF",
 	COMMENT: "COMMENT",
 
-	STRING: "STRING",
+	SEMICOLON: "SEMICOLON",
+	STRING:    "STRING",
+	CHAR:      "CHAR",
 
 	TAG:   "TAG",
 	EXPR:  "EXPR",
